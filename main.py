@@ -36,7 +36,7 @@ def cpu_table(main_cpu_usage_detail,sub_cpu_usage_detail):
         table.add_row("⚙️",sub_cpu_usage_detail[i][0],)
     return table
 
-def cpu_table_updator(
+def table_updator(
         table1,
         table2,
         main_cpu_detail,
@@ -84,25 +84,6 @@ def ram_table(ram_vertual_usage_detail,ram_swap_usage_detail):
     table.add_row("💿 Swap",ram_swap_usage_detail[0][0],"g","hi","hi")
     return table
 
-def ram_vertual_usage_details(no):
-    progress=Progress(
-                TextColumn("{task.description}"),
-                BarColumn(),                              
-                TaskProgressColumn()
-                )
-    task_id=progress.add_task("",total=100)
-    ram_vertual_usage_detail=(progress,task_id)
-    return ram_vertual_usage_detail
-
-def ram_swap_usage_details():
-    progress=Progress(
-                TextColumn("{task.description}"),
-                BarColumn(),                              
-                TaskProgressColumn()
-                )
-    task_id=progress.add_task("",total=100)
-    ram_swap_usage_detail=(progress,task_id)
-    return ram_swap_usage_detail
 
 def usage_details(times,name=None):
     usage_detail=[]
@@ -131,7 +112,7 @@ def main():
     sub_cpu_usage_detail= usage_details(n_of_cores,"cpu")
     table1=cpu_table(main_cpu_usage_detail,sub_cpu_usage_detail)
     table2=ram_table(ram_vertual_usage_detail,ram_swap_usage_detail)
-    cpu_table_updator(
+    table_updator(
         table1,
         table2,
         main_cpu_usage_detail,
