@@ -1,6 +1,7 @@
 import psutil
 import time
 from collections import namedtuple
+import pprint
 def net_info_cal():
     Info = namedtuple("Info", ["device", "upload", "download", "sent", "recv"])
     data=psutil.net_io_counters(pernic=True, nowrap=True)
@@ -94,3 +95,6 @@ psutil.STATUS_DEAD,
 #psutil.STATUS_WAKE_KILL,
 psutil.STATUS_WAKING,
 )
+
+for proc in psutil.process_iter(['pid', 'name', 'username']):
+    pprint.pprint(proc.as_dict())

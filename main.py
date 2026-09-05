@@ -221,12 +221,26 @@ def bat_table():
             time_left=time_left=battry_details.secsleft/(60*60)
             time_left=round(time_left,2)
             status= "not plugged in"
-        battery_info=f"🔋 Percentage : {b_percent}   Status : {status}   Time left : {time_left}hrs"
+        battery_info=f"🔋 Percentage : {b_percent}   Status : {status}   Time left : {time_left} hrs"
     else:
         battery_info=f"------"
 
     table.add_row(battery_info)
 
+    return table
+
+
+def process_table():
+    table=Table(show_header=True, box=None)
+    table.add_column("Name")
+    table.add_column("PID")
+    table.add_column("Status")
+    table.add_column("User Name")
+    table.add_column("CPU")
+    table.add_column("RAM")
+    for p in psutil.process_iter(["name","pid","status","username","cpu_percent","memory_percent"]):
+        proc=p.info
+        table.add_row(f"{proc.get("name")}",f"{proc.get("pid")}",f"{proc.get("status")}",f"{proc.get("username")}",f"{proc.get("cpu_percent")}",f"{proc.get("memory_percent")}")
     return table
 
 
@@ -240,7 +254,8 @@ def table_updator():
             table5=disk_table_2()
             table6 = network_table()
             table7=bat_table()
-            col = Columns([table1, Group(table2,table3,table4,table5,table6,table7)])
+            table8=process_table()
+            col = Group(Columns([table1, Group(table2,table3,table4,table5,table6,table7)]),table8)
             live.update(col)
 
             time.sleep(1)
