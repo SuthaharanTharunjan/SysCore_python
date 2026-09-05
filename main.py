@@ -240,7 +240,7 @@ def process_table():
     table.add_column("RAM")
     for p in psutil.process_iter(["name","pid","status","username","cpu_percent","memory_percent"]):
         proc=p.info
-        table.add_row(f"{proc.get("name")}",f"{proc.get("pid")}",f"{proc.get("status")}",f"{proc.get("username")}",f"{proc.get("cpu_percent")}",f"{proc.get("memory_percent")}")
+        table.add_row(f"{proc.get("name")}",f"{proc.get("pid")}",f"{proc.get("status")}",f"{proc.get("username")}",f"{proc.get("cpu_percent"):.2f}",f"{proc.get("memory_percent")}")
     return table
 
 
