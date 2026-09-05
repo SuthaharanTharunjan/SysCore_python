@@ -49,19 +49,6 @@ def cpu_table():
     return table
 
 
-def table_updator():
-    with Live(refresh_per_second=1) as live:
-        while True:
-            table1 = cpu_table()
-            table2 = ram_table()
-            table3=disk_table()
-            table4 = network_table()
-            col = Columns([table1, Group(table2,table3,table4)])
-            live.update(col)
-
-            time.sleep(1)
-
-
 def ram_table():
 
     table = Table(show_header=True, box=None)
@@ -74,23 +61,24 @@ def ram_table():
 
     ram_v_data=psutil.virtual_memory()
     ram_v_usage = ram_v_data.percent
-    used1 = f"{ram_v_data.used*1e-9:.2f}GB"
-    free1 = f"{ram_v_data.free*1e-9:.2f}GB"
-    total1 = f"{ram_v_data.total*1e-9:.2f}GB"
+    used1 = f"{ram_v_data.used/(1024**3):.2f}GB"
+    free1 = f"{ram_v_data.free/(1024**3):.2f}GB"
+    total1 = f"{ram_v_data.total/(1024**3):.2f}GB"
 
     ram_s_data=psutil.swap_memory()
     ram_s_usage = ram_s_data.percent
-    used2 = f"{ram_s_data.used*1e-9:.2f}GB"
-    free2 = f"{ram_s_data.free*1e-9:.2f}GB"
-    total2 = f"{ram_s_data.total*1e-9:.2f}GB"
+    used2 = f"{ram_s_data.used/(1024**3):.2f}GB"
+    free2 = f"{ram_s_data.free/(1024**3):.2f}GB"
+    total2 = f"{ram_s_data.total/(1024**3):.2f}GB"
 
     
     table.add_row("📀 Virtual", usage_details(ram_v_usage, "ram"), used1, free1, total1)
-    
     table.add_row("💿 Swap", usage_details(ram_s_usage, "ram"), used2, free2, total2)
+
     return table
 
-def disk_table():
+
+def disk_table_1():
     table = Table(show_header=True, box=None)
 
     table.add_column("DISK")
@@ -103,13 +91,53 @@ def disk_table():
     for drive_data in drive_data_list:
         disk_data=psutil.disk_usage(drive_data.mountpoint)
         disk_usage=disk_data.percent
-        used=f"{disk_data.used*1e-9:.2f}GB"
-        free=f"{disk_data.free*1e-9:.2f}GB"
-        total=f"{disk_data.total*1e-9:.2f}GB"
+        used=f"{disk_data.used/(1024**3):.2f}GB"
+        free=f"{disk_data.free/(1024**3):.2f}GB"
+        total=f"{disk_data.total/(1024**3):.2f}GB"
         table.add_row(f"{drive_data.device}")
         table.add_row(f"💾 [{drive_data.fstype}]",usage_details(disk_usage, "disk"),used,free,total)
 
     return table
+
+
+def disk_table_2():
+    table= Table(show_header=False, box=None)
+    table.add_column()
+    table.add_column()
+    table.add_column()
+
+    d_details=disk_info_calc()
+    for disk in d_details:
+        table.add_row(f"{disk.drive}",f"read: {disk.read:.2f}MB/s",f"write: {disk.write:.2f}MB/s")
+        table.add_row("",f"count: {disk.count_r}",f"count: {disk.count_w}")
+    return table
+
+def disk_info_calc():
+    data=psutil.disk_io_counters(perdisk=True, nowrap=True)
+    d_details=[]
+    Info = namedtuple("Info", ["drive", "read", "write", "count_r", "count_w"])
+    for drive,details in data.items():
+        old_drive_data=psutil.disk_io_counters(perdisk=True, nowrap=True)[drive]
+        start=time.monotonic()
+        old_r=old_drive_data.read_bytes/(1024**2)
+        old_w=old_drive_data.write_bytes/(1024**2)
+
+        time.sleep(0.1)
+
+        new_drive_data=psutil.disk_io_counters(perdisk=True, nowrap=True)[drive]
+        end=time.monotonic()
+        new_r=new_drive_data.read_bytes/(1024**2)
+        new_w=new_drive_data.write_bytes/(1024**2)
+
+        r_count=new_drive_data.read_count
+        w_count=new_drive_data.write_count
+
+        read=(new_r-old_r)/(end-start)
+        write=(new_w-old_w)/(end-start)
+        info= Info(drive,read,write,r_count,w_count)
+        d_details.append(info)
+    return d_details
+
 
 def network_table():
     table = Table(show_header=True, box=None)
@@ -149,16 +177,16 @@ def net_info_cal():
         data=psutil.net_io_counters(pernic=True, nowrap=True)
         start=time.monotonic()
 
-        old_s=data[device].bytes_sent*1e-6
-        old_r=data[device].bytes_recv*1e-6
+        old_s=data[device].bytes_sent/(1024**2)
+        old_r=data[device].bytes_recv/(1024**2)
 
         time.sleep(0.1)
 
         data=psutil.net_io_counters(pernic=True, nowrap=True)
         end=time.monotonic()
 
-        new_s=data[device].bytes_sent*1e-6
-        new_r=data[device].bytes_recv*1e-6
+        new_s=data[device].bytes_sent/(1024**2)
+        new_r=data[device].bytes_recv/(1024**2)
 
         upload=(new_s-old_s)/(end-start)
         download=(new_r-old_r)/(end-start)
@@ -167,6 +195,19 @@ def net_info_cal():
         d_details.append(info)
 
     return d_details
+
+def table_updator():
+    with Live(refresh_per_second=1) as live:
+        while True:
+            table1 = cpu_table()
+            table2 = ram_table()
+            table3=disk_table_1()
+            table4=disk_table_2()
+            table5 = network_table()
+            col = Columns([table1, Group(table2,table3,table4,table5)])
+            live.update(col)
+
+            time.sleep(1)
 
 
 def main():

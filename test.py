@@ -28,3 +28,29 @@ def net_info_cal():
         d_details.append(info)
     return d_details
 
+def disk_info_calc():
+    data=psutil.disk_io_counters(perdisk=True, nowrap=True)
+    d_details=[]
+    Info = namedtuple("Info", ["drive", "read", "write", "count_r", "count_w"])
+    for drive,details in data.items():
+        old_drive_data=psutil.disk_io_counters(perdisk=True, nowrap=True)[drive]
+        start=time.monotonic()
+        old_r=old_drive_data.read_bytes
+        old_w=old_drive_data.write_bytes
+
+        time.sleep(0.1)
+
+        new_drive_data=psutil.disk_io_counters(perdisk=True, nowrap=True)[drive]
+        end=time.monotonic()
+        new_r=new_drive_data.read_bytes
+        new_w=new_drive_data.write_bytes
+
+        r_count=new_drive_data.read_count
+        w_count=new_drive_data.write_count
+
+        read=(new_r-old_r)/(end-start)
+        write=(new_w-old_w)/(end-start)
+        info= Info(drive,read,write,r_count,w_count)
+        d_details.append(info)
+    return d_details
+print(disk_info_calc())
