@@ -55,7 +55,8 @@ def table_updator():
             table1 = cpu_table()
             table2 = ram_table()
             table3=disk_table()
-            col = Columns([table1, Group(table2,table3)])
+            table4 = network_table()
+            col = Columns([table1, Group(table2,table3,table4)])
             live.update(col)
 
             time.sleep(1)
@@ -120,7 +121,15 @@ def network_table():
 
     d_details=net_info_cal()
     for d_detail in d_details:
-        table.add_row(f"{d_detail.device}",f"{d_detail.upload}",f"{d_detail.download}",f"{d_detail.sent}",f"{d_detail.recv}")
+        if "Wi-Fi" or "wlp" or "wlan" in d_detail.device :
+            emoji="🛜"
+        elif "Ethernet" or "eth" or "enp" or "en1" in d_detail.device :
+            emoji="🔌"
+        else:
+            emoji="🌐"
+        table.add_row(f"{emoji} {d_detail.device}",f"{d_detail.upload}MB/s",f"{d_detail.download}MB/s",f"{d_detail.sent}MB",f"{d_detail.recv}MB") 
+
+    return table 
 
 
 def net_info_cal():
