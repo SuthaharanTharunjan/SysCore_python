@@ -64,8 +64,33 @@ if battry_details :
     else:
         time_left=time_left=battry_details.secsleft/(60*60)
         status= "not plugged in"
-    battery_info=f"Percentage : {b_percent}   Status : {status}   Time left : {time_left:.2f}hrs"
+    battery_info=f"Percentage : {b_percent}   Status : {status}   Time left : {time_left}hrs"
 else:
     battery_info=f"------"
-print(battery_info)
-print(time_left)
+
+
+#for proc in psutil.process_iter(['pid', 'name', 'username']):
+    #print(proc.info)
+print(
+psutil.POSIX,
+psutil.LINUX,
+psutil.WINDOWS,
+psutil.MACOS,
+psutil.FREEBSD,
+psutil.NETBSD,
+psutil.OPENBSD,
+psutil.BSD,
+psutil.SUNOS,
+psutil.AIX,
+)
+print(
+psutil.STATUS_RUNNING,
+psutil.STATUS_SLEEPING,
+psutil.STATUS_DISK_SLEEP,
+psutil.STATUS_STOPPED,
+psutil.STATUS_TRACING_STOP,
+psutil.STATUS_ZOMBIE,
+psutil.STATUS_DEAD,
+#psutil.STATUS_WAKE_KILL,
+psutil.STATUS_WAKING,
+)

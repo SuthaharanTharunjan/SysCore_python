@@ -47,16 +47,18 @@ def cpu_table():
     for i, core_usage in enumerate(cpu_core_usage):
         table.add_row(f"⚙️ Core {i}", usage_details(core_usage, "cpu"))
     return table
-def cpu_table_2():
-    table=Table(show_header=False, box=None)
 
+
+def cpu_table_2():
+    table=Table(show_header=True, box=None)
+
+    table.add_column(f"Number of CPU Cores ")
     table.add_column()
-    table.add_column()
-    table.add_column()
-    table.add_row(f"Number of CPU Cores ")
-    table.add_row(f"Physical : {psutil.cpu_count(logical=False)}")
-    table.add_row(f"Logical : {psutil.cpu_count(logical=True)}")
+    table.add_row(f"Physical : {psutil.cpu_count(logical=False)}",f"Logical : {psutil.cpu_count(logical=True)}")
+    
     return table
+
+
 def ram_table():
 
     table = Table(show_header=True, box=None)
@@ -229,7 +231,7 @@ def bat_table():
 
 
 def table_updator():
-    with Live(refresh_per_second=1) as live:
+    with Live(refresh_per_second=10,screen=True) as live:
         while True:
             table1 = cpu_table()
             table2= cpu_table_2()
@@ -245,7 +247,7 @@ def table_updator():
 
 
 def main():
-    console = Console()
+  
     table_updator()
 
 
