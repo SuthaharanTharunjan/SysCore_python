@@ -127,7 +127,7 @@ def network_table():
             emoji="🔌"
         else:
             emoji="🌐"
-        table.add_row(f"{emoji} {d_detail.device}",f"{d_detail.upload}MB/s",f"{d_detail.download}MB/s",f"{d_detail.sent}MB",f"{d_detail.recv}MB") 
+        table.add_row(f"{emoji} {d_detail.device}",f"{d_detail.upload:.2f}MB/s",f"{d_detail.download:.2f}MB/s",f"{d_detail.sent:.2f}MB",f"{d_detail.recv:.2f}MB") 
 
     return table 
 
@@ -135,28 +135,37 @@ def network_table():
 def net_info_cal():
     Info = namedtuple("Info", ["device", "upload", "download", "sent", "recv"])
     data=psutil.net_io_counters(pernic=True, nowrap=True)
+
     devices=[]
     d_details=[]
+
     for device,values in data.items():
         sent=values.bytes_sent
         recv=values.bytes_recv
         if not (sent==0 and recv==0):
             devices.append(device)
+
     for device in devices:
         data=psutil.net_io_counters(pernic=True, nowrap=True)
         start=time.monotonic()
-        old_s=data[device].bytes_sent
-        old_r=data[device].bytes_recv
+
+        old_s=data[device].bytes_sent*1e-6
+        old_r=data[device].bytes_recv*1e-6
+
         time.sleep(0.1)
+
         data=psutil.net_io_counters(pernic=True, nowrap=True)
         end=time.monotonic()
-        new_s=data[device].bytes_sent
-        new_r=data[device].bytes_recv
+
+        new_s=data[device].bytes_sent*1e-6
+        new_r=data[device].bytes_recv*1e-6
 
         upload=(new_s-old_s)/(end-start)
         download=(new_r-old_r)/(end-start)
+
         info= Info(device,upload,download,new_s,new_r)
         d_details.append(info)
+
     return d_details
 
 
