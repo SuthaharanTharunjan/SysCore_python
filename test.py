@@ -53,4 +53,19 @@ def disk_info_calc():
         info= Info(drive,read,write,r_count,w_count)
         d_details.append(info)
     return d_details
-print(disk_info_calc())
+
+battry_details=psutil.sensors_battery()
+if battry_details :
+    b_percent=battry_details.percent
+    b_plugged=battry_details.power_plugged
+    if b_plugged :
+        time_left="-"
+        status= "plugged in"
+    else:
+        time_left=time_left=battry_details.secsleft/(60*60)
+        status= "not plugged in"
+    battery_info=f"Percentage : {b_percent}   Status : {status}   Time left : {time_left:.2f}hrs"
+else:
+    battery_info=f"------"
+print(battery_info)
+print(time_left)

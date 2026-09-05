@@ -108,7 +108,7 @@ def disk_table_2():
 
     d_details=disk_info_calc()
     for disk in d_details:
-        table.add_row(f"{disk.drive}",f"read: {disk.read:.2f}MB/s",f"write: {disk.write:.2f}MB/s")
+        table.add_row(f"💽 {disk.drive}",f"read: {disk.read:.2f}MB/s",f"write: {disk.write:.2f}MB/s")
         table.add_row("",f"count: {disk.count_r}",f"count: {disk.count_w}")
     return table
 
@@ -196,6 +196,30 @@ def net_info_cal():
 
     return d_details
 
+def bat_table():
+    table = Table(show_header=True, box=None)
+    table.add_column("Battery")
+
+    battry_details=psutil.sensors_battery()
+    if battry_details :
+        b_percent=battry_details.percent
+        b_plugged=battry_details.power_plugged
+        if b_plugged :
+            time_left="--N/A--"
+            status= "plugged in"
+        else:
+            time_left=time_left=battry_details.secsleft/(60*60)
+            time_left=round(time_left,2)
+            status= "not plugged in"
+        battery_info=f"🔋 Percentage : {b_percent}   Status : {status}   Time left : {time_left}hrs"
+    else:
+        battery_info=f"------"
+
+    table.add_row(battery_info)
+
+    return table
+
+
 def table_updator():
     with Live(refresh_per_second=1) as live:
         while True:
@@ -204,7 +228,8 @@ def table_updator():
             table3=disk_table_1()
             table4=disk_table_2()
             table5 = network_table()
-            col = Columns([table1, Group(table2,table3,table4,table5)])
+            table6=bat_table()
+            col = Columns([table1, Group(table2,table3,table4,table5,table6)])
             live.update(col)
 
             time.sleep(1)
