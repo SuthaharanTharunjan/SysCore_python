@@ -13,7 +13,7 @@ from rich.columns import Columns
 import psutil
 import platform
 import time
-
+from collections import namedtuple
 
 class FrequencyColumn(ProgressColumn):
     def render(self, task):
@@ -22,14 +22,13 @@ class FrequencyColumn(ProgressColumn):
 
 def usage_details(usage, name=None):
     progress = Progress(
-        TextColumn("{task.description}", justify="right"),
-        BarColumn(bar_width=30),
-        TaskProgressColumn(),
+        BarColumn(bar_width=10,finished_style="red"),
+        TaskProgressColumn()
     )
     if name == "cpu":
-        progress.add_task(":", total=100, completed=usage)
+        progress.add_task("",total=100, completed=usage)
     else:
-        progress.add_task("", total=100, completed=usage)
+        progress.add_task("",total=100, completed=usage)
 
     return progress
 
@@ -42,12 +41,11 @@ def cpu_table():
 
     cpu_core_usage = psutil.cpu_percent(interval=None, percpu=True)
 
-    table.add_column("CPU")
-    table.add_column(usage_details(cpu_usage, "cpu"))
-    table.add_column(f"[{cpu_freq:.2f}GHz]")
-
+    table.add_column()
+    table.add_column("Usage")
+    table.add_row(f"CPU {cpu_freq:.2f}GHz",usage_details(cpu_usage, "cpu"))
     for i, core_usage in enumerate(cpu_core_usage):
-        table.add_row(f"⚙️ Core {i}", usage_details(core_usage, "cpu"), "")
+        table.add_row(f"⚙️ Core {i}", usage_details(core_usage, "cpu"))
     return table
 
 
@@ -56,7 +54,8 @@ def table_updator():
         while True:
             table1 = cpu_table()
             table2 = ram_table()
-            col = Columns([table1, table2])
+            table3=disk_table()
+            col = Columns([table1, Group(table2,table3)])
             live.update(col)
 
             time.sleep(1)
@@ -72,19 +71,84 @@ def ram_table():
     table.add_column("Free")
     table.add_column("Total")
 
-    used1 = f"{psutil.virtual_memory().used*1e-9:.2f}GB"
-    free1 = f"{psutil.virtual_memory().free*1e-9:.2f}GB"
-    total1 = f"{psutil.virtual_memory().total*1e-9:.2f}GB"
+    ram_v_data=psutil.virtual_memory()
+    ram_v_usage = ram_v_data.percent
+    used1 = f"{ram_v_data.used*1e-9:.2f}GB"
+    free1 = f"{ram_v_data.free*1e-9:.2f}GB"
+    total1 = f"{ram_v_data.total*1e-9:.2f}GB"
 
-    used2 = f"{psutil.swap_memory().used*1e-9:.2f}GB"
-    free2 = f"{psutil.swap_memory().free*1e-9:.2f}GB"
-    total2 = f"{psutil.swap_memory().total*1e-9:.2f}GB"
+    ram_s_data=psutil.swap_memory()
+    ram_s_usage = ram_s_data.percent
+    used2 = f"{ram_s_data.used*1e-9:.2f}GB"
+    free2 = f"{ram_s_data.free*1e-9:.2f}GB"
+    total2 = f"{ram_s_data.total*1e-9:.2f}GB"
 
-    ram_v_usage = psutil.virtual_memory().percent
+    
     table.add_row("📀 Virtual", usage_details(ram_v_usage, "ram"), used1, free1, total1)
-    ram_s_usage = psutil.swap_memory().percent
+    
     table.add_row("💿 Swap", usage_details(ram_s_usage, "ram"), used2, free2, total2)
     return table
+
+def disk_table():
+    table = Table(show_header=True, box=None)
+
+    table.add_column("DISK")
+    table.add_column("Usage")
+    table.add_column("Used")
+    table.add_column("Free")
+    table.add_column("Total")
+
+    drive_data_list=psutil.disk_partitions(all=False)
+    for drive_data in drive_data_list:
+        disk_data=psutil.disk_usage(drive_data.mountpoint)
+        disk_usage=disk_data.percent
+        used=f"{disk_data.used*1e-9:.2f}GB"
+        free=f"{disk_data.free*1e-9:.2f}GB"
+        total=f"{disk_data.total*1e-9:.2f}GB"
+        table.add_row(f"{drive_data.device}")
+        table.add_row(f"💾 [{drive_data.fstype}]",usage_details(disk_usage, "disk"),used,free,total)
+
+    return table
+
+def network_table():
+    table = Table(show_header=True, box=None)
+    table.add_column("NET")
+    table.add_column("Upload")
+    table.add_column("Download")
+    table.add_column("Sent")
+    table.add_column("Recieved")
+
+    d_details=net_info_cal()
+    for d_detail in d_details:
+        table.add_row(f"{d_detail.device}",f"{d_detail.upload}",f"{d_detail.download}",f"{d_detail.sent}",f"{d_detail.recv}")
+
+
+def net_info_cal():
+    Info = namedtuple("Info", ["device", "upload", "download", "sent", "recv"])
+    data=psutil.net_io_counters(pernic=True, nowrap=True)
+    devices=[]
+    d_details=[]
+    for device,values in data.items():
+        sent=values.bytes_sent
+        recv=values.bytes_recv
+        if not (sent==0 and recv==0):
+            devices.append(device)
+    for device in devices:
+        data=psutil.net_io_counters(pernic=True, nowrap=True)
+        start=time.monotonic()
+        old_s=data[device].bytes_sent
+        old_r=data[device].bytes_recv
+        time.sleep(0.1)
+        data=psutil.net_io_counters(pernic=True, nowrap=True)
+        end=time.monotonic()
+        new_s=data[device].bytes_sent
+        new_r=data[device].bytes_recv
+
+        upload=(new_s-old_s)/(end-start)
+        download=(new_r-old_r)/(end-start)
+        info= Info(device,upload,download,new_s,new_r)
+        d_details.append(info)
+    return d_details
 
 
 def main():
