@@ -47,8 +47,16 @@ def cpu_table():
     for i, core_usage in enumerate(cpu_core_usage):
         table.add_row(f"⚙️ Core {i}", usage_details(core_usage, "cpu"))
     return table
+def cpu_table_2():
+    table=Table(show_header=False, box=None)
 
-
+    table.add_column()
+    table.add_column()
+    table.add_column()
+    table.add_row(f"Number of CPU Cores ")
+    table.add_row(f"Physical : {psutil.cpu_count(logical=False)}")
+    table.add_row(f"Logical : {psutil.cpu_count(logical=True)}")
+    return table
 def ram_table():
 
     table = Table(show_header=True, box=None)
@@ -224,12 +232,13 @@ def table_updator():
     with Live(refresh_per_second=1) as live:
         while True:
             table1 = cpu_table()
-            table2 = ram_table()
-            table3=disk_table_1()
-            table4=disk_table_2()
-            table5 = network_table()
-            table6=bat_table()
-            col = Columns([table1, Group(table2,table3,table4,table5,table6)])
+            table2= cpu_table_2()
+            table3 = ram_table()
+            table4=disk_table_1()
+            table5=disk_table_2()
+            table6 = network_table()
+            table7=bat_table()
+            col = Columns([table1, Group(table2,table3,table4,table5,table6,table7)])
             live.update(col)
 
             time.sleep(1)
