@@ -17,10 +17,6 @@ import time
 from collections import namedtuple
 
 
-class FrequencyColumn(ProgressColumn):
-    def render(self, task):
-        return Text(f"[{task.fields['freq']:.2f} GHz]")
-
 
 def usage_details(usage, name=None):
     progress = Progress(
@@ -323,38 +319,9 @@ def process_table():
     return table
 
 
-
-def table_updator(text):
-    with Live(refresh_per_second=10, screen=True) as live:
-        while True:
-            table1 = cpu_table_1()
-            table2 = cpu_table_2()
-            table3 = ram_table()
-            table4 = disk_table_1()
-            table5 = disk_table_2()
-            table6 = network_table()
-            table7 = bat_table()
-            table8 = fan_table()
-            content = Group(
-                    text,
-                    Columns(
-                        [
-                            Group(table1, table2),
-                            Group(table3, table4, table5, table6, table7, table8),
-                        ]
-                    )
-                )
-
-            live.update(content)
-
-            time.sleep(1)
-
-
-def main():
-    key=input("Enter Fuunction: ")
-    console=Console()
-    ascii_art=r"""
-
+def program_name():
+    ascii_art = r"""
+    
   /$$$$$$                       /$$$$$$                               
  /$$__  $$                     /$$__  $$                              
 | $$  \__/ /$$   /$$  /$$$$$$$| $$  \__/  /$$$$$$   /$$$$$$   /$$$$$$ 
@@ -365,15 +332,51 @@ def main():
  \______/  \____  $$|_______/  \______/  \______/ |__/       \_______/
            /$$  | $$                                                  
           |  $$$$$$/                                                  
-           \______/                                                   
-
-            """
-
+           \______/                                                                                                 
+    
+    """
     text = Text(ascii_art, no_wrap=True)
-    if key=="p":
+
+    return text
+
+
+def table_updator():
+    with Live(refresh_per_second=10, screen=True) as live:
+        while True:
+            title = program_name()
+            table1 = cpu_table_1()
+            table2 = cpu_table_2()
+            table3 = ram_table()
+            table4 = disk_table_1()
+            table5 = disk_table_2()
+            table6 = network_table()
+            table7 = bat_table()
+            table8 = fan_table()
+            content = Group(
+                title,
+                Columns(
+                    [
+                        Group(table1, table2),
+                        Group(table3, table4, table5, table6, table7, table8),
+                    ]
+                ),
+            )
+
+            live.update(content)
+
+            time.sleep(1)
+
+
+def main():
+    key = input("Enter Function: ")
+    console = Console()
+
+    if key == "p":
+        console.print(program_name())
         console.print(process_table())
     else:
-        table_updator(text)
+        table_updator()
+
 
 if __name__ == "__main__":
     main()
