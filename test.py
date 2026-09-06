@@ -95,6 +95,12 @@ psutil.STATUS_DEAD,
 #psutil.STATUS_WAKE_KILL,
 psutil.STATUS_WAKING,
 )
-
+'''
 for proc in psutil.process_iter(['pid', 'name', 'username']):
     pprint.pprint(proc.as_dict())
+'''
+fan_list=[]
+if psutil.LINUX :
+    fan_data=psutil.sensors_fans()
+    for fan in fan_data:
+        fan_list.append({fan.label:fan.current})

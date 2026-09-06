@@ -10,6 +10,7 @@ from rich.progress import (
 from rich.live import Live
 from rich.text import Text
 from rich.columns import Columns
+from rich.panel import Panel
 import psutil
 import platform
 import time
@@ -33,35 +34,56 @@ def usage_details(usage, name=None):
     return progress
 
 
-def cpu_table():
-    table = Table(show_header=True, box=None)
+def cpu_table_1():
+    table = Table(show_header=True, box=None ,padding=(0,1))
 
     cpu_usage = psutil.cpu_percent(interval=None, percpu=False)
     cpu_freq = (psutil.cpu_freq(percpu=False).current) / 1000
+    
+    cpu_temp = "-N/A-"
+    cpu_core_temp = {}
+    if psutil.LINUX :
+        temps=psutil.sensors_temperatures(fahrenheit=False)
+        if "coretemp" in temps:
+            if "Physical id 0" in temps["coretemp"][0].label:
+                cpu_temp=f"{entry.current}°C"                        
 
+                for entry in temps["coretemp"][1:]:
+                    if "Core" in entry.label:
+                        core_no=entry.label.replace("Core","")
+                        cpu_core_temp[core_no]=entry.current
+    
     cpu_core_usage = psutil.cpu_percent(interval=None, percpu=True)
 
-    table.add_column()
+    table.add_column("CPU")
     table.add_column("Usage")
-    table.add_row(f"CPU {cpu_freq:.2f}GHz",usage_details(cpu_usage, "cpu"))
+    table.add_column("Temp")
+
+    table.add_row(f"Main {cpu_freq:.2f}GHz",usage_details(cpu_usage, "cpu"),f"{cpu_temp}")
     for i, core_usage in enumerate(cpu_core_usage):
-        table.add_row(f"⚙️ Core {i}", usage_details(core_usage, "cpu"))
+        try:
+            cpu_core_temp_n=f"{cpu_core_temp[i]}°C"
+        except KeyError:
+            cpu_core_temp_n="-N/A-"
+        table.add_row(f"⚙️ Core {i}", usage_details(core_usage, "cpu"),f"{cpu_core_temp_n}")
+    table.add_row()
+
     return table
 
 
 def cpu_table_2():
-    table=Table(show_header=True, box=None)
+    table=Table(show_header=True, box=None ,padding=(0,1))
 
-    table.add_column(f"Number of CPU Cores ")
+    table.add_column(f"Core count")
     table.add_column()
     table.add_row(f"Physical : {psutil.cpu_count(logical=False)}",f"Logical : {psutil.cpu_count(logical=True)}")
-    
+    table.add_row()
     return table
 
 
 def ram_table():
 
-    table = Table(show_header=True, box=None)
+    table = Table(show_header=True, box=None ,padding=(0,1))
 
     table.add_column("RAM")
     table.add_column("Usage")
@@ -84,12 +106,12 @@ def ram_table():
     
     table.add_row("📀 Virtual", usage_details(ram_v_usage, "ram"), used1, free1, total1)
     table.add_row("💿 Swap", usage_details(ram_s_usage, "ram"), used2, free2, total2)
-
+    table.add_row()
     return table
 
 
 def disk_table_1():
-    table = Table(show_header=True, box=None)
+    table = Table(show_header=True, box=None ,padding=(0,1))
 
     table.add_column("DISK")
     table.add_column("Usage")
@@ -106,12 +128,13 @@ def disk_table_1():
         total=f"{disk_data.total/(1024**3):.2f}GB"
         table.add_row(f"{drive_data.device}")
         table.add_row(f"💾 [{drive_data.fstype}]",usage_details(disk_usage, "disk"),used,free,total)
+    table.add_row()
 
     return table
 
 
 def disk_table_2():
-    table= Table(show_header=False, box=None)
+    table= Table(show_header=False, box=None ,padding=(0,1))
     table.add_column()
     table.add_column()
     table.add_column()
@@ -120,6 +143,8 @@ def disk_table_2():
     for disk in d_details:
         table.add_row(f"💽 {disk.drive}",f"read: {disk.read:.2f}MB/s",f"write: {disk.write:.2f}MB/s")
         table.add_row("",f"count: {disk.count_r}",f"count: {disk.count_w}")
+    table.add_row()
+
     return table
 
 def disk_info_calc():
@@ -146,11 +171,12 @@ def disk_info_calc():
         write=(new_w-old_w)/(end-start)
         info= Info(drive,read,write,r_count,w_count)
         d_details.append(info)
+
     return d_details
 
 
 def network_table():
-    table = Table(show_header=True, box=None)
+    table = Table(show_header=True, box=None ,padding=(0,1))
     table.add_column("NET")
     table.add_column("Upload")
     table.add_column("Download")
@@ -166,6 +192,7 @@ def network_table():
         else:
             emoji="🌐"
         table.add_row(f"{emoji} {d_detail.device}",f"{d_detail.upload:.2f}MB/s",f"{d_detail.download:.2f}MB/s",f"{d_detail.sent:.2f}MB",f"{d_detail.recv:.2f}MB") 
+    table.add_row()
 
     return table 
 
@@ -207,7 +234,7 @@ def net_info_cal():
     return d_details
 
 def bat_table():
-    table = Table(show_header=True, box=None)
+    table = Table(show_header=True, box=None,padding=(0,1))
     table.add_column("Battery")
 
     battry_details=psutil.sensors_battery()
@@ -226,12 +253,12 @@ def bat_table():
         battery_info=f"------"
 
     table.add_row(battery_info)
-
+    table.add_row()
     return table
 
 
 def process_table():
-    table=Table(show_header=True, box=None)
+    table=Table(show_header=True, box=None,padding=(0,1))
     table.add_column("Name")
     table.add_column("PID")
     table.add_column("Status")
@@ -241,21 +268,39 @@ def process_table():
     for p in psutil.process_iter(["name","pid","status","username","cpu_percent","memory_percent"]):
         proc=p.info
         table.add_row(f"{proc.get("name")}",f"{proc.get("pid")}",f"{proc.get("status")}",f"{proc.get("username")}",f"{proc.get("cpu_percent"):.2f}",f"{proc.get("memory_percent"):.2f}")
+    table.add_row()
+
     return table
 
+def fan_table():
+    table=Table(show_header=True, box=None,padding=(0,1))
+    table.add_column("Manufacturer")
+    table.add_column("Type")
+    table.add_column("Speed")
+
+    if psutil.LINUX :
+        fan_data=psutil.sensors_fans()
+        for mf,fan_d in fan_data.items():
+            table.add_row(f"❄️ {mf}",f"{fan_d.label}",f"{fan_d.current}RPM")
+    else:
+        table.add_row("❄️ -N/A-","-N/A-","-N/A-")
+    table.add_row()
+
+    return table
 
 def table_updator():
     with Live(refresh_per_second=10,screen=True) as live:
         while True:
-            table1 = cpu_table()
+            table1 = cpu_table_1()
             table2= cpu_table_2()
             table3 = ram_table()
             table4=disk_table_1()
             table5=disk_table_2()
             table6 = network_table()
             table7=bat_table()
-            table8=process_table()
-            col = Group(Columns([table1, Group(table2,table3,table4,table5,table6,table7)]),table8)
+            table8=fan_table()
+            #table9=process_table()
+            col = Panel(Group(Columns([Group(table1,table2), Group(table3,table4,table5,table6,table7,table8)])),border_style="cyan")
             live.update(col)
 
             time.sleep(1)
