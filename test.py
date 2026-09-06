@@ -1,108 +1,102 @@
-import psutil
-import time
-from collections import namedtuple
-import pprint
-def net_info_cal():
-    Info = namedtuple("Info", ["device", "upload", "download", "sent", "recv"])
-    data=psutil.net_io_counters(pernic=True, nowrap=True)
-    devices=[]
-    d_details=[]
-    for device,values in data.items():
-        sent=values.bytes_sent
-        recv=values.bytes_recv
-        if not (sent==0 and recv==0):
-            devices.append(device)
-    for device in devices:
-        data=psutil.net_io_counters(pernic=True, nowrap=True)
-        start=time.monotonic()
-        old_s=data[device].bytes_sent
-        old_r=data[device].bytes_recv
-        time.sleep(0.1)
-        data=psutil.net_io_counters(pernic=True, nowrap=True)
-        end=time.monotonic()
-        new_s=data[device].bytes_sent
-        new_r=data[device].bytes_recv
-
-        upload=(new_s-old_s)/(end-start)
-        download=(new_r-old_r)/(end-start)
-        info= Info(device,upload,download,new_s,new_r)
-        d_details.append(info)
-    return d_details
-
-def disk_info_calc():
-    data=psutil.disk_io_counters(perdisk=True, nowrap=True)
-    d_details=[]
-    Info = namedtuple("Info", ["drive", "read", "write", "count_r", "count_w"])
-    for drive,details in data.items():
-        old_drive_data=psutil.disk_io_counters(perdisk=True, nowrap=True)[drive]
-        start=time.monotonic()
-        old_r=old_drive_data.read_bytes
-        old_w=old_drive_data.write_bytes
-
-        time.sleep(0.1)
-
-        new_drive_data=psutil.disk_io_counters(perdisk=True, nowrap=True)[drive]
-        end=time.monotonic()
-        new_r=new_drive_data.read_bytes
-        new_w=new_drive_data.write_bytes
-
-        r_count=new_drive_data.read_count
-        w_count=new_drive_data.write_count
-
-        read=(new_r-old_r)/(end-start)
-        write=(new_w-old_w)/(end-start)
-        info= Info(drive,read,write,r_count,w_count)
-        d_details.append(info)
-    return d_details
-
-battry_details=psutil.sensors_battery()
-if battry_details :
-    b_percent=battry_details.percent
-    b_plugged=battry_details.power_plugged
-    if b_plugged :
-        time_left="-"
-        status= "plugged in"
-    else:
-        time_left=time_left=battry_details.secsleft/(60*60)
-        status= "not plugged in"
-    battery_info=f"Percentage : {b_percent}   Status : {status}   Time left : {time_left}hrs"
-else:
-    battery_info=f"------"
+import pytest
+from rich.table import Table
+from main import disk_info_cal
+from main import net_info_cal
+from main import cpu_table_1
+from main import cpu_table_2
+from main import ram_table
+from main import disk_table_1
+from main import disk_table_2
+from main import network_table
+from main import bat_table
+from main import fan_table
+from main import process_table
 
 
-#for proc in psutil.process_iter(['pid', 'name', 'username']):
-    #print(proc.info)
-print(
-psutil.POSIX,
-psutil.LINUX,
-psutil.WINDOWS,
-psutil.MACOS,
-psutil.FREEBSD,
-psutil.NETBSD,
-psutil.OPENBSD,
-psutil.BSD,
-psutil.SUNOS,
-psutil.AIX,
-)
-print(
-psutil.STATUS_RUNNING,
-psutil.STATUS_SLEEPING,
-psutil.STATUS_DISK_SLEEP,
-psutil.STATUS_STOPPED,
-psutil.STATUS_TRACING_STOP,
-psutil.STATUS_ZOMBIE,
-psutil.STATUS_DEAD,
-#psutil.STATUS_WAKE_KILL,
-psutil.STATUS_WAKING,
-)
-'''
-for proc in psutil.process_iter(['pid', 'name', 'username']):
-    pprint.pprint(proc.as_dict())
-'''
-'''
-fan_list=[]
-if psutil.LINUX :
-    fan_data=psutil.sensors_fans()
-    for fan in fan_data:
-        fan_list.append({fan.label:fan.current})
-'''
+def test_disk_info_cal():
+    results = disk_info_cal()
+    for result in results:
+        assert hasattr(result, "drive")
+        assert hasattr(result, "read")
+        assert hasattr(result, "write")
+        assert hasattr(result, "count_r")
+        assert hasattr(result, "count_w")
+
+        assert isinstance(result.drive, str)
+        assert isinstance(result.read, float)
+        assert isinstance(result.write, float)
+        assert isinstance(result.count_r, int)
+        assert isinstance(result.count_w, int)
+
+
+def test_net_info_cal():
+    results = net_info_cal()
+    for result in results:
+        assert hasattr(result, "device")
+        assert hasattr(result, "upload")
+        assert hasattr(result, "download")
+        assert hasattr(result, "sent")
+        assert hasattr(result, "recv")
+
+        assert isinstance(result.device, str)
+        assert isinstance(result.upload, float)
+        assert isinstance(result.download, float)
+        assert isinstance(result.sent, float)
+        assert isinstance(result.recv, float)
+
+
+def test_cpu_table_1():
+    table = cpu_table_1()
+    assert isinstance(table, Table)
+    assert len(table.columns) == 3
+
+
+def test_cpu_table_2():
+    table = cpu_table_2()
+    assert isinstance(table, Table)
+    assert len(table.columns) == 2
+    assert len(table.rows) == 2
+
+
+def test_ram_table():
+    table = ram_table()
+    assert isinstance(table, Table)
+    assert len(table.columns) == 5
+    assert len(table.rows) == 3
+
+
+def test_disk_table_1():
+    table = disk_table_1()
+    assert isinstance(table, Table)
+    assert len(table.columns) == 5
+
+
+def test_disk_table_2():
+    table = disk_table_2()
+    assert isinstance(table, Table)
+    assert len(table.columns) == 3
+
+
+def test_network_table():
+    table = network_table()
+    assert isinstance(table, Table)
+    assert len(table.columns) == 5
+
+
+def test_bat_table():
+    table = bat_table()
+    assert isinstance(table, Table)
+    assert len(table.columns) == 1
+    assert len(table.rows) == 2
+
+
+def test_fan_table():
+    table = fan_table()
+    assert isinstance(table, Table)
+    assert len(table.columns) == 3
+
+
+def test_process_table():
+    table = process_table()
+    assert isinstance(table, Table)
+    assert len(table.columns) == 6

@@ -17,7 +17,6 @@ import time
 from collections import namedtuple
 
 
-
 def usage_details(usage, name=None):
     progress = Progress(
         BarColumn(bar_width=10, finished_style="red"), TaskProgressColumn()
@@ -147,7 +146,7 @@ def disk_table_2():
     table.add_column()
     table.add_column()
 
-    d_details = disk_info_calc()
+    d_details = disk_info_cal()
     for disk in d_details:
         table.add_row(
             f"💽 {disk.drive}",
@@ -160,7 +159,7 @@ def disk_table_2():
     return table
 
 
-def disk_info_calc():
+def disk_info_cal():
     data = psutil.disk_io_counters(perdisk=True, nowrap=True)
     d_details = []
     Info = namedtuple("Info", ["drive", "read", "write", "count_r", "count_w"])
@@ -265,12 +264,14 @@ def bat_table():
             time_left = "--N/A--"
             status = "plugged in"
         else:
-            time_left = time_left = battry_details.secsleft / (60 * 60)
-            time_left = round(time_left, 2)
+            time_left = battry_details.secsleft
+            hrs = time_left // (60 * 60)
+            miniut = (time_left % (60 * 60)) // 60
+            time_left = f"{hrs}h {miniut}m"
             status = "not plugged in"
-        battery_info = f"🔋 Percentage : {b_percent}%   Status : {status}   Time left : {time_left} hrs"
+        battery_info = f"🔋 Percentage : {b_percent}%   Status : {status}   Time left : {time_left}"
     else:
-        battery_info = f"------"
+        battery_info = f"🔋 -------------N/A-------------"
 
     table.add_row(battery_info)
     table.add_row()
@@ -321,19 +322,15 @@ def process_table():
 
 def program_name():
     ascii_art = r"""
-    
-  /$$$$$$                       /$$$$$$                               
- /$$__  $$                     /$$__  $$                              
-| $$  \__/ /$$   /$$  /$$$$$$$| $$  \__/  /$$$$$$   /$$$$$$   /$$$$$$ 
-|  $$$$$$ | $$  | $$ /$$_____/| $$       /$$__  $$ /$$__  $$ /$$__  $$
- \____  $$| $$  | $$|  $$$$$$ | $$      | $$  \ $$| $$  \__/| $$$$$$$$
- /$$  \ $$| $$  | $$ \____  $$| $$    $$| $$  | $$| $$      | $$_____/
-|  $$$$$$/|  $$$$$$$ /$$$$$$$/|  $$$$$$/|  $$$$$$/| $$      |  $$$$$$$
- \______/  \____  $$|_______/  \______/  \______/ |__/       \_______/
-           /$$  | $$                                                  
-          |  $$$$$$/                                                  
-           \______/                                                                                                 
-    
+         .oooooo..o                        .oooooo.                                
+        d8P'    `Y8                       d8P'  `Y8b                               
+        Y88bo.      oooo    ooo  .oooo.o 888           .ooooo.  oooo d8b  .ooooo.  
+         `"Y8888o.   `88.  .8'  d88(  "8 888          d88' `88b `888""8P d88' `88b 
+             `"Y88b   `88..8'   `"Y88b.  888          888   888  888     888ooo888 
+        oo     .d8P    `888'    o.  )88b `88b    ooo  888   888  888     888    .o 
+        8""88888P'      .8'     8""888P'  `Y8bood8P'  `Y8bod8P' d888b    `Y8bod8P' 
+                    .o..P'                                                        
+                    `Y8P'                                               
     """
     text = Text(ascii_art, no_wrap=True)
 
@@ -352,6 +349,7 @@ def table_updator():
             table6 = network_table()
             table7 = bat_table()
             table8 = fan_table()
+
             content = Group(
                 title,
                 Columns(
