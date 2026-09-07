@@ -3,19 +3,17 @@ from rich.table import Table
 from rich.progress import (
     Progress,
     BarColumn,
-    TextColumn,
     TaskProgressColumn,
-    ProgressColumn,
 )
 from rich.live import Live
 from rich.text import Text
 from rich.columns import Columns
 from rich.panel import Panel
+from rich import box
 import psutil
-import platform
 import time
 from collections import namedtuple
-
+from pynput import keyboard
 
 def usage_details(usage, name=None):
     progress = Progress(
@@ -295,18 +293,24 @@ def fan_table():
     return table
 
 
-def process_table():
-    table = Table(show_header=True, box=None, padding=(0, 1))
+def process_table_1():
+    table = Table(show_header=True, box=box.MARKDOWN, padding=(0, 1),expand=True,)
     table.add_column("Name")
     table.add_column("PID")
     table.add_column("Status")
     table.add_column("User Name")
     table.add_column("CPU")
     table.add_column("RAM")
+    table.add_column("Location")
     for p in psutil.process_iter(
-        ["name", "pid", "status", "username", "cpu_percent", "memory_percent"]
+        ["name", "pid", "status", "username", "cpu_percent", "memory_percent","exe"]
     ):
         proc = p.info
+        if proc.get("exe"):
+            exe_text=proc.get("exe")
+        else:
+            exe_text = Text("-N/A-")
+        
         table.add_row(
             f"{proc.get("name")}",
             f"{proc.get("pid")}",
@@ -314,11 +318,50 @@ def process_table():
             f"{proc.get("username")}",
             f"{proc.get("cpu_percent"):.2f}",
             f"{proc.get("memory_percent"):.2f}",
+            f"{exe_text}"
         )
     table.add_row()
 
     return table
 
+def process_table_2(scroll,height):
+    table = Table(show_header=True, box=box.MARKDOWN, padding=(0, 1),expand=True)
+    table.add_column("No.")
+    table.add_column("Name")
+    table.add_column("PID")
+    table.add_column("Status")
+    table.add_column("User Name")
+    table.add_column("CPU")
+    table.add_column("RAM")
+    old_data=[]
+    for data in get_process_data():
+        old_data.append(data)
+        if len(old_data)==scroll+height :
+            break
+    new_row_data=old_data[scroll:scroll+height]
+    for row in new_row_data:
+        table.add_row(row[0],row[1],row[2],row[3],row[4],row[5],row[6])
+    return table
+
+def get_process_data():
+    no=1
+    for i,p in enumerate(psutil.process_iter(
+        ["name", "pid", "status", "username", "cpu_percent", "memory_percent","exe"]
+    )):
+        proc = p.info
+        if proc.get("username") != None :
+            data=(
+                f"{no}",
+                f"{proc.get("name")}",
+                f"{proc.get("pid")}",
+                f"{proc.get("status")}",
+                f"{proc.get("username")}",
+                f"{proc.get("cpu_percent"):.2f}",
+                f"{proc.get("memory_percent"):.2f}",
+                f"{proc.get("exe")}"
+            )
+            no += 1
+        yield data
 
 def program_name():
     ascii_art = r"""
@@ -338,40 +381,81 @@ def program_name():
 
 
 def table_updator():
-    with Live(refresh_per_second=10, screen=True) as live:
-        while True:
-            title = program_name()
-            table1 = cpu_table_1()
-            table2 = cpu_table_2()
-            table3 = ram_table()
-            table4 = disk_table_1()
-            table5 = disk_table_2()
-            table6 = network_table()
-            table7 = bat_table()
-            table8 = fan_table()
+    
+        while run_time:
+            waiting=Text("Loading.....")
+            with Live(waiting,refresh_per_second=10, screen=True) as live:
+                while main_scr:
+                    title = program_name()
+                    table1 = cpu_table_1()
+                    table2 = cpu_table_2()
+                    table3 = ram_table()
+                    table4 = disk_table_1()
+                    table5 = disk_table_2()
+                    table6 = network_table()
+                    table7 = bat_table()
+                    table8 = fan_table()
+                    footer= Text("[Esc] : Quit the programme   |   [-→] : Processes Screen")
+                    content = Group(
+                        title,
+                        Columns(
+                            [
+                                Group(table1, table2),
+                                Group(table3, table4, table5, table6, table7, table8),
+                            ]
+                        ),footer,
+                    )
 
-            content = Group(
-                title,
-                Columns(
-                    [
-                        Group(table1, table2),
-                        Group(table3, table4, table5, table6, table7, table8),
-                    ]
-                ),
-            )
+                    live.update(content)
+                    time.sleep(1)
+        
+            with Live(waiting,refresh_per_second=10, screen=True) as live:        
+                while pro_scr:
+                    global scroll
+                    console = Console()
+                    height = console.height
+                    footer= Text("[Esc] : Quit the programme   |   [←-] : Main Screen")
+                    content = Group(process_table_2(scroll, height-5),footer)
+                    live.update(content)
+                    time.sleep(0.5)
 
-            live.update(content)
+                
+def on_press(key):
+    global scroll
+    global main_scr
+    global pro_scr
+    global run_time
+    try:
+        if key == keyboard.Key.up and scroll > 0:
+            scroll -= 1
+        elif key == keyboard.Key.down:
+            scroll += 1
+        elif key == keyboard.Key.left:
+            main_scr=True
+            pro_scr=False
+        elif key == keyboard.Key.right:
+            main_scr=False
+            pro_scr=True
+        elif key == keyboard.Key.esc:
+            run_time=False
+            main_scr=False
+            pro_scr=False
+    except AttributeError:
+        pass
 
-            time.sleep(1)
-
+scroll = 0 
+main_scr=True
+pro_scr=False
+run_time=True
 
 def main():
     key = input("Enter Function: ")
     console = Console()
-
+    listener = keyboard.Listener(on_press=on_press)
+    listener.start()
     if key == "p":
         console.print(program_name())
-        console.print(process_table())
+        console.print(process_table_1())
     else:
         table_updator()
 

@@ -10,8 +10,8 @@ from main import disk_table_2
 from main import network_table
 from main import bat_table
 from main import fan_table
-from main import process_table
-
+from main import process_table_1
+from main import process_table_2
 
 def test_disk_info_cal():
     results = disk_info_cal()
@@ -96,7 +96,12 @@ def test_fan_table():
     assert len(table.columns) == 3
 
 
-def test_process_table():
-    table = process_table()
+def test_process_table_1():
+    table = process_table_1()
     assert isinstance(table, Table)
-    assert len(table.columns) == 6
+    assert len(table.columns) == 7
+
+def test_process_table_2 ():
+    table = process_table_2(0,50)
+    assert isinstance(table, Table)
+    assert len(table.columns) == 7
