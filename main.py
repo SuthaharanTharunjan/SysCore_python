@@ -429,7 +429,7 @@ def table_updator():
                 table7 = bat_table()
                 table8 = fan_table()
                 footer = Text(
-                    "[ Esc ] : Quit the programme   |   [ -→ ] : Processes Screen"
+                    "[ Esc ] : Quit the programe   |   [ -→ ] : Processes Screen"
                 )
                 content = Group(
                     title,
@@ -450,7 +450,9 @@ def table_updator():
                 global scroll
                 console = Console()
                 height = console.height
-                footer = Text("[ Esc ] : Quit the programme   |   [ ←- ] : Main Screen")
+                footer = Text(
+                    "[ Esc ] : Quit the programe   |   [ ←- ] : Main Screen   |   [ ↑ ] : Scroll up   |   [ ↓ ] : Scroll down"
+                )
                 content = Group(process_table_2(scroll, height - 5), footer)
                 live.update(content)
                 time.sleep(0.5)
