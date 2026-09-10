@@ -2,6 +2,7 @@ from textual.app import App, ComposeResult
 from textual.containers import ScrollableContainer, Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Footer, Header ,Static
+from textual import work
 from func import program_name
 from func import cpu_table_1
 from func import cpu_table_2
@@ -19,53 +20,48 @@ class MainScreen(Screen):
         yield Footer()
         with ScrollableContainer(id="main_container"):
             with Vertical(id="top"):
-                yield Static(id="title")
+                yield Static(program_name(), id="title")
             with Horizontal():
                 with Vertical(id="left"):
                     with ScrollableContainer(id="cpu_table_1_container"):
-                        yield Static(id="cpu_table_1")
+                        yield Static(cpu_table_1(), id="cpu_table_1")
                     with ScrollableContainer(id="cpu_table_2_container"):
-                        yield Static(id="cpu_table_2")
+                        yield Static(cpu_table_2(),id="cpu_table_2")
                 with Vertical(id="right"):
                     with ScrollableContainer(id="ram_table_container"):
-                        yield Static(id="ram_table")
+                        yield Static(ram_table(),id="ram_table")
                     with ScrollableContainer(id="disk_table_1_container"):
-                        yield Static(id="disk_table_1")
+                        yield Static(disk_table_1(),id="disk_table_1")
                     with ScrollableContainer(id="disk_table_2_container"):
-                        yield Static(id="disk_table_2")
+                        yield Static(disk_table_2(),id="disk_table_2")
                     with ScrollableContainer(id="network_table_container"):
-                        yield Static(id="network_table")        
+                        yield Static(network_table(),id="network_table")        
                     with ScrollableContainer(id="bat_table_container"):
-                        yield Static(id="bat_table")
+                        yield Static(bat_table(),id="bat_table")
                     with ScrollableContainer(id="fan_table_container"):
-                        yield Static(id="fan_table")
-
-    def cpu_table(self):
+                        yield Static(fan_table(),id="fan_table")
+    def update_all_table(self):
+        #cpu_table
         self.query_one("#cpu_table_1",Static).update(cpu_table_1())
         self.query_one("#cpu_table_2",Static).update(cpu_table_2())
-
-    def ram_table(self):
+        #ram_table
         self.query_one("#ram_table",Static).update(ram_table())
-
-    def disk_table(self):
+        #disk_table
         self.query_one("#disk_table_1",Static).update(disk_table_1())
         self.query_one("#disk_table_2",Static).update(disk_table_2())
-    def network_table(self):
+        #network_table
         self.query_one("#network_table",Static).update(network_table())
-
-    def bat_table(self):
+        #bat_table
         self.query_one("#bat_table",Static).update(bat_table())
-    def fan_table(self):
+        #fan_table
         self.query_one("#fan_table",Static).update(fan_table())
+                
+        
     def on_mount(self):
         self.query_one("#title",Static).update(program_name())
-        self.set_interval(1,self.cpu_table)
-        self.set_interval(1,self.ram_table)
-        self.set_interval(1,self.disk_table)
-        self.set_interval(1,self.network_table)
-        self.set_interval(1,self.bat_table)
-        self.set_interval(1,self.fan_table)
+        self.set_interval(1,self.update_all_table)
 
+        
 class ProcessScreen(Screen):
     def compose(self) -> ComposeResult:
         yield Header()
