@@ -1,19 +1,10 @@
-from rich.console import Console, Group
 from rich.table import Table
-from rich.progress import (
-    Progress,
-    BarColumn,
-    TaskProgressColumn,
-)
 from rich.live import Live
 from rich.text import Text
-from rich.columns import Columns
 from rich import box
 import psutil
 import time
 from collections import namedtuple
-from pynput import keyboard
-import sys
 from usage_bar import usage_details
 
 _disk_cache = {}
@@ -22,7 +13,8 @@ _net_cache = {}
 def cpu_table_1():
     table = Table(show_header=True, box=None, padding=(0, 1), expand=True)
 
-    cpu_usage = psutil.cpu_percent(interval=None, percpu=False)
+    cpu_core_usage = psutil.cpu_percent(interval=None, percpu=True)
+    cpu_usage = sum(cpu_core_usage) / len(cpu_core_usage) if cpu_core_usage else 0.0
 
     freq_data = psutil.cpu_freq(percpu=False)
     cpu_freq_str = f"{freq_data.current / 1000:.2f}GHz" if freq_data else "-N/A-"
@@ -72,7 +64,6 @@ def cpu_table_1():
         except Exception:
             pass
 
-    cpu_core_usage = psutil.cpu_percent(interval=None, percpu=True)
 
     table.add_column("CPU")
     table.add_column("Usage")
@@ -115,7 +106,7 @@ def ram_table():
     ram_v_data = psutil.virtual_memory()
     ram_v_usage = ram_v_data.percent
     used1 = f"{ram_v_data.used/(1024**3):.2f}GB"
-    free1 = f"{ram_v_data.free/(1024**3):.2f}GB"
+    free1 = f"{ram_v_data.available/(1024**3):.2f}GB"
     total1 = f"{ram_v_data.total/(1024**3):.2f}GB"
 
     ram_s_data = psutil.swap_memory()
@@ -317,8 +308,11 @@ def fan_table():
     if psutil.LINUX:
         try:
             fan_data = psutil.sensors_fans()
-            for mf, fan_d in fan_data.items():
-                table.add_row(f"❄️ {mf}", f"{fan_d.label}", f"{fan_d.current}RPM")
+            for mf, fan_list in fan_data.items():
+                # Added nested loop for the list of fans
+                for fan_d in fan_list:
+                    label = fan_d.label or "-N/A-"
+                    table.add_row(f"❄️ {mf}", f"{label}", f"{fan_d.current}RPM")
         except Exception:
             pass        
     else:

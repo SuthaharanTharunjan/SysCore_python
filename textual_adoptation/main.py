@@ -40,6 +40,7 @@ class MainScreen(Screen):
                         yield Static(bat_table(),id="bat_table")
                     with ScrollableContainer(id="fan_table_container"):
                         yield Static(fan_table(),id="fan_table")
+                        
     def update_all_table(self):
         #cpu_table
         self.query_one("#cpu_table_1",Static).update(cpu_table_1())
@@ -67,7 +68,7 @@ class ProcessScreen(Screen):
         yield Header()
         yield Footer()    
         with ScrollableContainer(id="process_container"):
-            yield Static(id="process_table_2")  
+            yield Static(process_table_2(),id="process_table_2")  
 
     def process_table(self):
         self.query_one("#process_table_2",Static).update(process_table_2())
