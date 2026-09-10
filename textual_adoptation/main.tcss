@@ -1,0 +1,96 @@
+#top {
+    width: 100%;
+    height: 13;
+    overflow-y: hidden;
+    align: center middle;
+}
+#title{
+    content-align: center middle;
+}
+
+
+
+
+#left{
+    width: 40%;
+    height: 1fr;
+    overflow-y: auto;
+    align: center top;
+}
+#cpu_table_1_container{
+    width: 100%;
+    align: center top;
+}
+#cpu_table_1{
+    width: 90%;
+}
+#cpu_table_2_container{
+    width: 100%;
+    align: center top;
+}
+#cpu_table_2{
+    width: 90%;
+
+}
+
+
+#right{
+    width: 60%;
+    height: 1fr;
+    overflow-y: auto;
+    align: center top;
+}
+
+#ram_table_container{
+    width: 100%;
+    align: center top;
+    height: 4;
+}
+#ram_table{
+    width: 90%;
+}
+
+#disk_table_1_container{
+    width: 100%;
+    align: center top;
+    height: 5;
+}
+#disk_table_1{
+    width: 90%;
+}
+
+#disk_table_2_container{
+    width: 100%;
+    align: center top;
+    height: 5;
+}
+#disk_table_2{
+    width: 90%;
+}
+
+#network_table_container{
+    width: 100%;
+    align: center top;
+    height: 4;
+}
+#network_table{
+    width: 90%;
+}
+
+#bat_table_container{
+    width: 100%;
+    align: center top;
+    height: 3;
+}
+#bat_table{
+    width: 90%;
+}
+
+#fan_table_container{
+    width: 100%;
+    align: center top;
+    height: 4;
+}
+#fan_table{
+    width: 90%;
+}
