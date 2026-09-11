@@ -10,6 +10,7 @@ from usage_bar import usage_details
 _disk_cache = {}
 _net_cache = {}
 
+
 def cpu_table_1():
     table = Table(show_header=True, box=None, padding=(0, 1), expand=True)
 
@@ -37,7 +38,10 @@ def cpu_table_1():
                     label = entry.label.strip()
 
                     # 1. Match package-level readings (Intel & AMD)
-                    if any(tag in label for tag in ("Package id 0", "Physical id 0", "Tctl", "Tdie")):
+                    if any(
+                        tag in label
+                        for tag in ("Package id 0", "Physical id 0", "Tctl", "Tdie")
+                    ):
                         if package_temp is None:
                             package_temp = entry.current
 
@@ -64,7 +68,6 @@ def cpu_table_1():
         except Exception:
             pass
 
-
     table.add_column("CPU")
     table.add_column("Usage")
     table.add_column("Temp")
@@ -81,6 +84,7 @@ def cpu_table_1():
 
     return table
 
+
 def cpu_table_2():
     table = Table(show_header=True, box=None, padding=(0, 1))
 
@@ -95,7 +99,7 @@ def cpu_table_2():
 
 def ram_table():
 
-    table = Table(show_header=True, box=None, padding=(0, 1),expand=True)
+    table = Table(show_header=True, box=None, padding=(0, 1), expand=True)
 
     table.add_column("RAM")
     table.add_column("Usage")
@@ -121,7 +125,7 @@ def ram_table():
 
 
 def disk_table_1():
-    table = Table(show_header=True, box=None, padding=(0, 1),expand=True)
+    table = Table(show_header=True, box=None, padding=(0, 1), expand=True)
 
     table.add_column("DISK")
     table.add_column("Usage")
@@ -156,7 +160,7 @@ def disk_table_1():
 
 
 def disk_table_2():
-    table = Table(show_header=False, box=None, padding=(0, 1),expand=True)
+    table = Table(show_header=False, box=None, padding=(0, 1), expand=True)
     table.add_column()
     table.add_column()
     table.add_column()
@@ -265,6 +269,7 @@ def net_info_cal():
 
     return d_details
 
+
 def bat_table():
     table = Table(show_header=True, box=None, padding=(0, 1), expand=True)
     table.add_column("Battery")
@@ -284,7 +289,11 @@ def bat_table():
             status = "not plugged in"
             secs = battry_details.secsleft
             # Fixed: Check for valid, positive seconds remaining
-            if secs not in (None, psutil.POWER_TIME_UNKNOWN, psutil.POWER_TIME_UNLIMITED) and secs > 0:
+            if (
+                secs
+                not in (None, psutil.POWER_TIME_UNKNOWN, psutil.POWER_TIME_UNLIMITED)
+                and secs > 0
+            ):
                 hrs = secs // 3600
                 miniut = (secs % 3600) // 60
                 time_left = f"{hrs}h {miniut}m"
@@ -300,7 +309,7 @@ def bat_table():
 
 
 def fan_table():
-    table = Table(show_header=True, box=None, padding=(0, 1),expand=True)
+    table = Table(show_header=True, box=None, padding=(0, 1), expand=True)
     table.add_column("Fan Manu.")
     table.add_column("Type")
     table.add_column("Speed")
@@ -314,7 +323,7 @@ def fan_table():
                     label = fan_d.label or "-N/A-"
                     table.add_row(f"❄️ {mf}", f"{label}", f"{fan_d.current}RPM")
         except Exception:
-            pass        
+            pass
     else:
         table.add_row("❄️ -N/A-", "-N/A-", "-N/A-")
 
@@ -399,21 +408,20 @@ def get_process_data():
     ):
         try:
             proc = p.info
-            if proc.get("username") is not None:
-                cpu = proc.get("cpu_percent") or 0.0
-                mem = proc.get("memory_percent") or 0.0
-                data = (
-                    f"{no}",
-                    f"{proc['name'] or '-'}",
-                    f"{proc['pid'] or '-'}",
-                    f"{proc['ppid'] or '-'}",
-                    f"{proc['status'] or '-'}",
-                    f"{proc['username'] or '-'}",
-                    f"{cpu:.2f}",
-                    f"{mem:.2f}",
-                )
-                no += 1
-                yield data
+            cpu = proc["cpu_percent"] or 0.0
+            mem = proc["memory_percent"] or 0.0
+            data = (
+                f"{no}",
+                f"{proc['name'] or '-'}",
+                f"{proc['pid'] or '-'}",
+                f"{proc['ppid'] or '-'}",
+                f"{proc['status'] or '-'}",
+                f"{proc['username'] or '-'}",
+                f"{cpu:.2f}",
+                f"{mem:.2f}",
+            )
+            no += 1
+            yield data
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             continue
 
@@ -433,9 +441,3 @@ oo     .d8P    `888'    o.  )88b `88b    ooo  888   888  888     888    .o
     text = Text(ascii_art, no_wrap=True)
 
     return text
-
-
-
-
-
-
