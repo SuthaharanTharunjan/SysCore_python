@@ -19,13 +19,13 @@
 ### 🪟 Windows Setup
 
 1. **Open the Terminal:**
-   Press `Win + R`, type `cmd` or `powershell`, and press **Enter**.
+Press `Win + R`, type `cmd` or `powershell`, and press **Enter**.
 
 2. **Navigate to the Project Directory:**
-   ```cmd
-   cd path\to\SysCore
+```cmd
+cd path/to/SysCore
 
-   ```
+```
 
 3. **Install Required Packages:**
 ```cmd
