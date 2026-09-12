@@ -1,4 +1,3 @@
-```markdown
 # 🖥️ SysCore
 
 #### 🎥 Video Demo: https://youtu.be/l3YHsJunmEA
@@ -25,9 +24,9 @@
 2. **Navigate to the Project Directory:**
    ```cmd
    cd path\to\SysCore
-
-```
-
+   
+   ```
+   
 3. **Install Required Packages:**
 ```cmd
 pip install -r requirements.txt
