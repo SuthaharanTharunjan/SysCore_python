@@ -1,181 +1,268 @@
-# SysCore
-#### Video Demo: https://youtu.be/l3YHsJunmEA
-#### Description
+```markdown
+# 🖥️ SysCore
 
-SysCore is a lightweight terminal-based system monitoring application written in Python. Its goal is to provide useful system information through a TUI (Terminal User Interface), acting as a lightweight alternative to a graphical task manager. It also includes a process log feature that allows the user to view a snapshot of the processes running on the system at that time.
+#### 🎥 Video Demo: https://youtu.be/l3YHsJunmEA
 
-## Features
+#### 📖 Description
 
-### CPU Monitoring
+**SysCore** is a lightweight terminal-based system monitoring application written in Python. Its goal is to provide useful system information through an intuitive TUI (Terminal User Interface), acting as a lightweight alternative to a graphical task manager. It also includes a process log feature that allows the user to view a snapshot of the processes running on the system at that time.
+
+---
+
+## ⚙️ Installation & Setup
+
+### 📋 Prerequisites
+- Python 3.8 or higher installed
+- `pip` (Python package manager)
+
+---
+
+### 🪟 Windows Setup
+
+1. **Open the Terminal:**
+   Press `Win + R`, type `cmd` or `powershell`, and press **Enter**.
+
+2. **Navigate to the Project Directory:**
+   ```cmd
+   cd path\to\SysCore
+
+```
+
+3. **Install Required Packages:**
+```cmd
+pip install -r requirements.txt
+
+```
+
+
+4. **Launch the Program:**
+```cmd
+python main.py
+
+```
+
+
+
+---
+
+### 🐧 Linux Setup
+
+1. **Open the Terminal:**
+Press `Ctrl + Alt + T`.
+2. **Navigate to the Project Directory:**
+```bash
+cd path/to/SysCore
+
+```
+
+
+3. **Install Required Packages:**
+```bash
+pip install -r requirements.txt
+
+```
+
+
+*(If your distribution restricts system-wide pip packages, add the `--break-system-packages` flag or `--user`)*:
+```bash
+pip install -r requirements.txt --break-system-packages
+
+```
+
+
+4. **Launch the Program:**
+```bash
+python3 main.py
+
+```
+
+
+
+> 💡 **Linux Note on `pynput`:** On Linux desktop sessions running **Wayland**, global keyboard capturing with `pynput` may fail or require running inside an X11 session or with `sudo`.
+
+---
+
+## 🎮 How to Use
+
+### 🖥️ Standard TUI Mode
+
+Run the main live monitoring interface:
+
+```bash
+python project.py
+
+```
+
+*(Use `python3 project.py` on Linux)*
+
+### ⌨️ Navigation Controls
+
+* ⬆️ **↑** — Scroll up in process list
+* ⬇️ **↓** — Scroll down in process list
+* ➡️ **→** — Open the detailed process screen
+* ⬅️ **←** — Return to the main overview screen
+* 🛑 **Esc** — Exit the application
+
+### 📜 Process Snapshot (CLI Mode)
+
+Generate a one-time terminal snapshot of active processes without launching the continuous UI:
+
+```bash
+python main.py --p_log
+
+```
+
+---
+
+## ✨ Features
+
+### 🧠 CPU Monitoring
 
 The CPU section provides:
 
-- Overall CPU usage
-- Current CPU frequency
-- Number of physical and logical CPU cores
-- Individual CPU core usage
-- Individual CPU core temperatures when available
-- Overall CPU temperature when available
+* 📊 Overall CPU usage
+* ⚡ Current CPU frequency
+* 🧩 Number of physical and logical CPU cores
+* 📈 Individual CPU core usage
+* 🌡️ Individual CPU core temperatures *(when available)*
+* 🔥 Overall CPU temperature *(when available)*
 
-### Memory Monitoring
+### 💾 Memory Monitoring
 
 The RAM section displays information about both physical memory and swap memory:
 
-- Usage percentage
-- Used memory
-- Free memory
-- Total memory
+* 📊 Usage percentage
+* 📉 Used memory
+* 📈 Free memory
+* 📦 Total memory
 
-### Disk Monitoring
+### 💽 Disk Monitoring
 
 For each available storage device, SysCore displays:
 
-- Storage usage percentage
-- Used space
-- Free space
-- Total space
-- Filesystem
-- Read speed
-- Write speed
-- Total read count since boot
-- Total write count since boot
+* 📊 Storage usage percentage
+* 📁 Used space
+* 📂 Free space
+* 💾 Total space
+* 🗂️ Filesystem
+* ⏩ Read speed
+* ⏪ Write speed
+* 📖 Total read count since boot
+* ✍️ Total write count since boot
 
-### Network Monitoring
+### 🌐 Network Monitoring
 
 The network section displays information for active network interfaces, including:
 
-- Upload speed
-- Download speed
-- Total data sent since boot
-- Total data received since boot
+* ⬆️ Upload speed
+* ⬇️ Download speed
+* 📤 Total data sent since boot
+* 📥 Total data received since boot
 
-### Battery Monitoring
+### 🔋 Battery Monitoring
 
 When a battery is available, SysCore displays:
 
-- Battery percentage
-- Charging status
-- Estimated remaining time when running on battery
+* 🔋 Battery percentage
+* ⚡ Charging status
+* ⏳ Estimated remaining time when running on battery
 
-### Fan Monitoring
+### 🌀 Fan Monitoring
 
 On systems where fan sensors are available, SysCore displays:
 
-- Fan manufacturer
-- Fan type
-- Fan speed in RPM
+* 🏷️ Fan manufacturer
+* ⚙️ Fan type
+* 🔄 Fan speed in RPM
 
-### Process Monitor
+### 📋 Process Monitor
 
 The process screen provides information about currently running processes, including:
 
-- Process number
-- Process name
-- PID
-- Parent PID
-- Process status
-- Username
-- CPU usage
-- RAM usage
+* 🔢 Process number
+* 🏷️ Process name
+* 🆔 PID
+* 👨‍👦 Parent PID
+* 🚦 Process status
+* 👤 Username
+* 🧠 CPU usage
+* 💾 RAM usage
 
-The process screen can be navigated using the keyboard and allows the user to scroll through the available processes.
+---
 
-### Process Log
+## 🪟🐧 Operating System Support
 
-SysCore also provides a command-line option for creating a process log. Using:
+SysCore primarily targets **Windows** and **Linux**.
 
-python project.py --p_log
+Most system information is available on both operating systems through `psutil`. However, some low-level hardware information—particularly CPU temperature and fan speed—depends on the sensors exposed by the operating system and hardware.
 
-the program displays the processes detected at that moment. This provides a simple snapshot of the processes currently running on the system by printing it in terminal.
+* 🐧 **Linux** generally provides easier access to these sensors through its hardware monitoring interfaces.
+* 🪟 Supporting the same information reliably on **Windows** would require additional libraries and hardware-specific methods. SysCore stays lightweight by using built-in sensor hooks where available rather than relying on heavy kernel-driver wrappers.
 
-## Operating System Support
+---
 
-SysCore primarily targets Windows and Linux.
+## 🛠️ Technologies Used
 
-Most system information is available on both operating systems through "psutil". However, some low-level hardware information, particularly CPU temperature and fan speed, depends on the sensors exposed by the operating system and hardware.
+### 🐍 Python
 
-Linux generally provides easier access to these sensors through its hardware monitoring interfaces. Supporting the same information reliably on Windows would require additional libraries and hardware-specific methods. I decided to keep SysCore relatively simple rather than adding multiple libraries specifically for Windows sensor monitoring.
+Python provides the primary structure for collecting, processing, and displaying system metrics.
 
-## Technologies Used
+### ⚙️ psutil
 
-### Python
+`psutil` retrieves system and process hardware telemetry:
 
-Python is used for the entire application and provides the structure for collecting, processing, and displaying system information.
+* 🧠 CPU usage and frequency
+* 🧩 CPU core topology
+* 💾 Memory and swap usage
+* 💽 Disk partitions and I/O rates
+* 🌐 Network interface statistics
+* 🔋 Battery status
+* 🌡️ Fan and temperature sensors
+* 📋 Running process tables
 
-### psutil
+### 🎨 Rich
 
-"psutil" is used to retrieve system and process information such as:
+Rich is responsible for rendering the terminal interface:
 
-- CPU usage and frequency
-- CPU core information
-- Memory usage
-- Disk information
-- Network statistics
-- Battery information
-- Fan and temperature sensors
-- Running processes
+* 📊 Tables
+* ⏳ Progress bars
+* 🔄 Live display updates
+* 🔤 Text formatting & styles
+* 📑 Multi-column grids
+* 🔲 Renderable grouping
 
-I chose "psutil" because it is well-established, relatively simple to use, and supports multiple operating systems.
+### ⌨️ pynput
 
-### Rich
+`pynput` provides asynchronous listener loops to capture navigation keybindings without blocking the terminal rendering thread.
 
-Rich is responsible for the terminal interface. It is used for:
+---
 
-- Tables
-- Progress bars
-- Live display updates
-- Text formatting
-- Columns
-- Grouping different sections of the interface
+## ⚡ Performance
 
-I originally considered using Textual, but after spending several hours learning it, I found that it introduced more complexity than I needed for this project. Rich provided the specific terminal features I needed while allowing me to build the interface with a smaller and simpler structure.
+SysCore balances UI responsiveness against background resource usage:
 
-### pynput
+* ⏱️ Low metric-sampling intervals ensure negligible CPU footprint.
+* 📉 Memory footprint scales inversely with refresh intervals.
+* ⚡ Process tables use windowed generator slicing so process lists render smoothly without allocating unnecessary memory.
 
-"pynput" is used to capture keyboard input. It allows SysCore to respond to keys such as:
+---
 
-- ↑ — Scroll up
-- ↓ — Scroll down
-- ← — Return to the main screen
-- → — Open the process screen
-- Esc — Exit the application
+## 🧪 Testing
 
-## Project Development
+The project includes tests written with **pytest**.
 
-One of the biggest challenges was figuring out where to start. I initially began learning Textual, but I eventually decided that Rich was more appropriate for the scope of this project.
+Run tests with:
 
-My first major feature was the CPU usage display and its progress bars. After learning how Rich worked, I implemented live updating and gradually built the CPU section. During development, I realized that I was initially using Rich Live incorrectly, so I had to learn how live displays should be structured and updated.
+```bash
+pytest
 
-Once I had a working structure, I organized the program into separate functions for each section of the system monitor. This made it easier to add new features without rewriting the entire program.
+```
 
-The process monitor was the most challenging part. Initially, retrieving information about every process and continuously rebuilding the table made the interface slow. I improved this by only retrieving the data needed for the visible section, using slicing, and later using a generator function to make process data retrieval more efficient.
+Tests evaluate deterministic components:
 
-I then implemented keyboard navigation, process scrolling, and the process log feature.
+* ✅ Rich table layout signatures
+* 📐 Column widths and count constraints
+* 🔢 Data type casting of system statistics
+* 🏷️ Keybinding listener dispatch integrity
 
-## Performance
-
-SysCore is designed to update its terminal interface frequently while collecting system information at a lower rate. This helps balance responsiveness with resource usage.
-
-The refresh rate can be reduced to decrease memory usage. At higher refresh rates the application uses more memory, while lowering the refresh rate can significantly reduce its resource consumption.
-
-The process screen is currently less responsive than the main monitoring screen, especially when dealing with a large number of processes. This is a known limitation of the current implementation.
-
-## Testing
-
-The project includes tests written with pytest.
-
-System information such as CPU usage, RAM usage, and the number of running processes cannot be reliably predicted during a test because these values constantly change. Therefore, the tests focus on predictable properties of the functions, such as:
-
-- Whether the correct Rich table type is returned
-- Table structure
-- Number of columns
-- Expected data types
-- Basic table dimensions
-
-This allows the parts of the program that can be tested deterministically to be verified without depending on the current state of the computer.
-
-## Motivation
-
-I have always been interested in computers, hardware, and interacting with systems at a lower level. I also have an interest in self-hosting and would like to build a home server in the future.
-
-Because of this, I wanted to create something that I could potentially use on a future server to quickly check system resources from the terminal. SysCore started as an idea for a simple system monitor and gradually developed into a more complete TUI with multiple monitoring sections, keyboard navigation, process monitoring, and process logging.
+---
