@@ -1,4 +1,4 @@
 rich
 pytest
-pynput
+textual
 psutil
