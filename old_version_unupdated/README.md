@@ -88,11 +88,11 @@ python3 main.py
 Run the main live monitoring interface:
 
 ```bash
-python project.py
+python main.py
 
 ```
 
-*(Use `python3 project.py` on Linux)*
+*(Use `python3 main.py` on Linux)*
 
 ### ⌨️ Navigation Controls
 

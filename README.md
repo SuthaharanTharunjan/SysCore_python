@@ -49,7 +49,7 @@ python main.py
 1. **Open the Terminal:**
 Press `Ctrl + Alt + T`.
 2. **Navigate to the Project Directory:**
-```cmd
+```bash
 cd path/to/SysCore
 
 ```
@@ -75,10 +75,6 @@ python3 main.py
 
 ```
 
-
-
-> 💡 **Linux Note on `pynput`:** On Linux desktop sessions running **Wayland**, global keyboard capturing with `pynput` may fail or require running inside an X11 session or with `sudo`.
-
 ---
 
 ## 🎮 How to Use
@@ -88,11 +84,11 @@ python3 main.py
 Run the main live monitoring interface:
 
 ```bash
-python project.py
+python main.py
 
 ```
 
-*(Use `python3 project.py` on Linux)*
+*(Use `python3 main.py` on Linux)*
 
 ### ⌨️ Navigation Controls
 
@@ -120,71 +116,107 @@ python main.py --p_log
 The CPU section provides:
 
 * 📊 Overall CPU usage
+
 * ⚡ Current CPU frequency
+
 * 🧩 Number of physical and logical CPU cores
+
 * 📈 Individual CPU core usage
+
 * 🌡️ Individual CPU core temperatures *(when available)*
+
 * 🔥 Overall CPU temperature *(when available)*
+
 
 ### 💾 Memory Monitoring
 
 The RAM section displays information about both physical memory and swap memory:
 
 * 📊 Usage percentage
+
 * 📉 Used memory
+
 * 📈 Free memory
+
 * 📦 Total memory
+
 
 ### 💽 Disk Monitoring
 
 For each available storage device, SysCore displays:
 
 * 📊 Storage usage percentage
+
 * 📁 Used space
+
 * 📂 Free space
+
 * 💾 Total space
+
 * 🗂️ Filesystem
+
 * ⏩ Read speed
+
 * ⏪ Write speed
+
 * 📖 Total read count since boot
+
 * ✍️ Total write count since boot
+
 
 ### 🌐 Network Monitoring
 
 The network section displays information for active network interfaces, including:
 
 * ⬆️ Upload speed
+
 * ⬇️ Download speed
+
 * 📤 Total data sent since boot
+
 * 📥 Total data received since boot
+
 
 ### 🔋 Battery Monitoring
 
 When a battery is available, SysCore displays:
 
 * 🔋 Battery percentage
+
 * ⚡ Charging status
+
 * ⏳ Estimated remaining time when running on battery
+
 
 ### 🌀 Fan Monitoring
 
 On systems where fan sensors are available, SysCore displays:
 
 * 🏷️ Fan manufacturer
+
 * ⚙️ Fan type
+
 * 🔄 Fan speed in RPM
+
 
 ### 📋 Process Monitor
 
 The process screen provides information about currently running processes, including:
 
 * 🔢 Process number
+
 * 🏷️ Process name
+
 * 🆔 PID
+
 * 👨‍👦 Parent PID
+
 * 🚦 Process status
+
 * 👤 Username
+
 * 🧠 CPU usage
+
 * 💾 RAM usage
 
 ---
@@ -196,7 +228,9 @@ SysCore primarily targets **Windows** and **Linux**.
 Most system information is available on both operating systems through `psutil`. However, some low-level hardware information—particularly CPU temperature and fan speed—depends on the sensors exposed by the operating system and hardware.
 
 * 🐧 **Linux** generally provides easier access to these sensors through its hardware monitoring interfaces.
+
 * 🪟 Supporting the same information reliably on **Windows** would require additional libraries and hardware-specific methods. SysCore stays lightweight by using built-in sensor hooks where available rather than relying on heavy kernel-driver wrappers.
+
 
 ---
 
@@ -210,59 +244,48 @@ Python provides the primary structure for collecting, processing, and displaying
 
 `psutil` retrieves system and process hardware telemetry:
 
-* 🧠 CPU usage and frequency
-* 🧩 CPU core topology
-* 💾 Memory and swap usage
-* 💽 Disk partitions and I/O rates
-* 🌐 Network interface statistics
+* 🧠 CPU utilization, frequency, and core topology
+
+* 💾 Memory and swap statistics
+
+* 💽 Storage partitions and disk I/O rates
+
+* 🌐 Network interface metrics
+
 * 🔋 Battery status
-* 🌡️ Fan and temperature sensors
-* 📋 Running process tables
+
+* 🌡️ Hardware temperature and fan sensors
+
+* 📋 Active process metadata
+
 
 ### 🎨 Rich
 
-Rich is responsible for rendering the terminal interface:
+Rich is responsible for rendering the components for terminal interface:
 
 * 📊 Tables
-* ⏳ Progress bars
-* 🔄 Live display updates
+
 * 🔤 Text formatting & styles
-* 📑 Multi-column grids
-* 🔲 Renderable grouping
 
-### ⌨️ pynput
 
-`pynput` provides asynchronous listener loops to capture navigation keybindings without blocking the terminal rendering thread.
+### 🖼️ Textual
+TUI framework powering the entire application interface:
+
+* 🎨 Modern widget layouts and responsive CSS-like styling
+
+* ⌨️ Built-in event loop and native terminal keybinding handling
+
+* 🔄 Reactive UI updates and asynchronous message workers
 
 ---
-
 ## ⚡ Performance
+SysCore balances responsive navigation with low resource consumption:
 
-SysCore balances UI responsiveness against background resource usage:
+* Controlled Polling Intervals: Telemetry gathering runs on measured background timers to maintain a negligible CPU footprint.
 
-* ⏱️ Low metric-sampling intervals ensure negligible CPU footprint.
-* 📉 Memory footprint scales inversely with refresh intervals.
-* ⚡ Process tables use windowed generator slicing so process lists render smoothly without allocating unnecessary memory.
+* Predictable Memory Usage: Data structures are kept compact and recycled between ticks, preventing memory leaks during long-running sessions.
 
----
-
-## 🧪 Testing
-
-The project includes tests written with **pytest**.
-
-Run tests with:
-
-```bash
-pytest
-
-```
-
-Tests evaluate deterministic components:
-
-* ✅ Rich table layout signatures
-* 📐 Column widths and count constraints
-* 🔢 Data type casting of system statistics
-* 🏷️ Keybinding listener dispatch integrity
+* Efficient UI Rendering: Textual's diff-based terminal engine renders only updated screen elements, eliminating full-screen flickering and unnecessary repaint cycles.
 
 ---
 
