@@ -1,4 +1,3 @@
-```markdown
 # 🖥️ SysCore
 
 #### 🎥 Video Demo: https://youtu.be/l3YHsJunmEA
@@ -26,7 +25,7 @@
    ```cmd
    cd path\to\SysCore
 
-```
+   ```
 
 3. **Install Required Packages:**
 ```cmd
