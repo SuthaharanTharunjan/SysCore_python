@@ -37,12 +37,15 @@ GRADIENT = [
     "#A80004",
 ]
 
+_gradient_colour_cache={}
+bar_width = 15
+
 def hex_to_rgb(color):
     color = color.lstrip("#")
     return tuple(int(color[i:i + 2], 16) for i in (0, 2, 4))
 
 
-def interpolate_color(color1, color2, amount):
+def interpolate_color(color1, color2, amount,i):
     r1, g1, b1 = hex_to_rgb(color1)
     r2, g2, b2 = hex_to_rgb(color2)
 
@@ -50,37 +53,36 @@ def interpolate_color(color1, color2, amount):
     g = round(g1 + (g2 - g1) * amount)
     b = round(b1 + (b2 - b1) * amount)
 
-    return f"rgb({r},{g},{b})"
+    _gradient_colour_cache[i]=(f"rgb({r},{g},{b})")
 
 
-def gradient_color(position):
+def gradient_color(i):
+    position = i / (bar_width - 1)
     # position is between 0 and 1
     scaled = position * (len(GRADIENT) - 1)
 
     index = int(scaled)
 
     if index >= len(GRADIENT) - 1:
-        return GRADIENT[-1]
-
-    amount = scaled - index
-
-    return interpolate_color(
-        GRADIENT[index],
-        GRADIENT[index + 1],
-        amount
-    )
+        _gradient_colour_cache[i]=GRADIENT[-1]
+    else:
+        amount = scaled - index
+        interpolate_color(
+            GRADIENT[index],
+            GRADIENT[index + 1],
+            amount,
+            i
+        )
 
 
 def usage_details(usage, name=None):
-    bar_width = 15
     filled = round((usage / 100) * bar_width)
 
     text = Text()
 
     for i in range(bar_width):
         if i < filled:
-            position = i / (bar_width - 1)
-            color = gradient_color(position)
+            color = _gradient_colour_cache[i]
 
             text.append("▰", style=color)
         else:
@@ -89,3 +91,9 @@ def usage_details(usage, name=None):
     text.append(f" {usage:>3.0f}%")
 
     return text
+
+def _cache_creator():
+    for i in range(bar_width):
+        gradient_color(i)
+
+_cache_creator()

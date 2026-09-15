@@ -52,7 +52,6 @@ class MainScreen(Screen):
     def update_all_table(self):
         # cpu_table
         self.query_one("#cpu_table_1", Static).update(cpu_table_1())
-        self.query_one("#cpu_table_2", Static).update(cpu_table_2())
         # ram_table
         self.query_one("#ram_table", Static).update(ram_table())
         # disk_table
@@ -67,6 +66,7 @@ class MainScreen(Screen):
 
     def on_mount(self):
         self.query_one("#title", Static).update(program_name())
+        self.query_one("#cpu_table_2", Static).update(cpu_table_2())
         self.set_interval(1, self.update_all_table)
 
 
@@ -77,23 +77,33 @@ class ProcessScreen(Screen):
         with ScrollableContainer(id="process_container"):
             yield Static("Loading......", id="process_table_2")
 
-    @work(thread=True, name="process_fetcher")
+    def on_mount(self):
+        self.is_active_screen = True
+
+    def on_screen_resume(self):
+        # 1. When you enter the screen, set the flag to True and start the loop
+        self.is_active_screen = True
+        self.process_table()
+
+    def on_screen_suspend(self):
+        # 2. When you leave the screen, set to False. This breaks the infinite loop!
+        self.is_active_screen = False
+
+    @work(thread=True, name="process_fetcher",exclusive=True)
     def process_table(self):
         return process_table_2()
 
-    def on_mount(self):
-        self.process_table()
-
     def on_worker_state_changed(self, event: Worker.StateChanged):
-        if event.worker.name == "process_fetcher":
-            if event.state == WorkerState.SUCCESS:
-                self.query_one("#process_table_2", Static).update(event.worker.result)
-                self.set_timer(1.0, self.process_table)
+        if self.is_active_screen == True:
+            if event.worker.name == "process_fetcher":
+                if event.state == WorkerState.SUCCESS:
+                    self.query_one("#process_table_2", Static).update(event.worker.result)
+                    self.set_timer(1.0, self.process_table)
 
-            elif event.state == WorkerState.ERROR:
-                self.query_one("#process_table_2", Static).update(
-                    f"[red]Pipeline failed: {event.worker.error}[/red]"
-                )
+                elif event.state == WorkerState.ERROR:
+                    self.query_one("#process_table_2", Static).update(
+                        f"[red]Pipeline failed: {event.worker.error}[/red]"
+                    )
 
 
 class SysCore(App):
