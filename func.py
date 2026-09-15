@@ -7,9 +7,14 @@ import time
 from collections import namedtuple
 from usage_bar import usage_details
 
+mb=1024 ** 2
+gb=1024 ** 3
+
 _disk_cache = {}
 _net_cache = {}
-
+_hardware_cache = {}
+Disk_Info = namedtuple("Info", ["drive", "read", "write", "count_r", "count_w"])
+Net_Info = namedtuple("NetInfo", ["device", "upload", "download", "sent", "recv"])
 
 def cpu_table_1():
     table = Table(show_header=True, box=None, padding=(0, 1), expand=True)
@@ -26,8 +31,14 @@ def cpu_table_1():
     if psutil.LINUX:
         try:
             temps = psutil.sensors_temperatures(fahrenheit=False)
-            sensor_keys = ["coretemp", "k10temp", "cpu_thermal"]
-            found_key = next((k for k in sensor_keys if k in temps), None)
+
+            found_key = _hardware_cache.get("cpu_temp_key")
+            
+            if not found_key:
+                sensor_keys = ["coretemp", "k10temp", "cpu_thermal"]
+                found_key = next((k for k in sensor_keys if k in temps), None)
+                if found_key:
+                    _hardware_cache["cpu_temp_key"] = found_key
 
             if found_key and temps[found_key]:
                 entries = temps[found_key]
@@ -109,15 +120,15 @@ def ram_table():
 
     ram_v_data = psutil.virtual_memory()
     ram_v_usage = ram_v_data.percent
-    used1 = f"{ram_v_data.used/(1024**3):.2f}GB"
-    free1 = f"{ram_v_data.available/(1024**3):.2f}GB"
-    total1 = f"{ram_v_data.total/(1024**3):.2f}GB"
+    used1 = f"{ram_v_data.used/(gb):.2f}GB"
+    free1 = f"{ram_v_data.available/(gb):.2f}GB"
+    total1 = f"{ram_v_data.total/(gb):.2f}GB"
 
     ram_s_data = psutil.swap_memory()
     ram_s_usage = ram_s_data.percent
-    used2 = f"{ram_s_data.used/(1024**3):.2f}GB"
-    free2 = f"{ram_s_data.free/(1024**3):.2f}GB"
-    total2 = f"{ram_s_data.total/(1024**3):.2f}GB"
+    used2 = f"{ram_s_data.used/(gb):.2f}GB"
+    free2 = f"{ram_s_data.free/(gb):.2f}GB"
+    total2 = f"{ram_s_data.total/(gb):.2f}GB"
 
     table.add_row("📀 Virtual", usage_details(ram_v_usage, "ram"), used1, free1, total1)
     table.add_row("💿 Swap", usage_details(ram_s_usage, "ram"), used2, free2, total2)
@@ -133,18 +144,19 @@ def disk_table_1():
     table.add_column("Free")
     table.add_column("Total")
 
-    try:
-        drive_data_list = psutil.disk_partitions(all=False)
-    except Exception:
-        drive_data_list = []
+    if "partitions" not in _hardware_cache:
+        try:
+            _hardware_cache["partitions"] = psutil.disk_partitions(all=False)
+        except Exception:
+            _hardware_cache["partitions"] = []
 
-    for drive_data in drive_data_list:
+    for drive_data in _hardware_cache["partitions"]:
         try:
             disk_data = psutil.disk_usage(drive_data.mountpoint)
             disk_usage = disk_data.percent
-            used = f"{disk_data.used/(1024**3):.2f}GB"
-            free = f"{disk_data.free/(1024**3):.2f}GB"
-            total = f"{disk_data.total/(1024**3):.2f}GB"
+            used = f"{disk_data.used/(gb):.2f}GB"
+            free = f"{disk_data.free/(gb):.2f}GB"
+            total = f"{disk_data.total/(gb):.2f}GB"
             table.add_row(f"{drive_data.device}")
             table.add_row(
                 f"💾 [{drive_data.fstype}]",
@@ -181,11 +193,10 @@ def disk_info_cal():
     data = psutil.disk_io_counters(perdisk=True, nowrap=True) or {}
     d_details = []
     current_time = time.monotonic()
-    Info = namedtuple("Info", ["drive", "read", "write", "count_r", "count_w"])
 
     for drive, values in data.items():
-        new_r = values.read_bytes / (1024**2)
-        new_w = values.write_bytes / (1024**2)
+        new_r = values.read_bytes / mb
+        new_w = values.write_bytes / mb
         r_count = values.read_count
         w_count = values.write_count
 
@@ -201,7 +212,7 @@ def disk_info_cal():
             read, write = 0.0, 0.0
 
         _disk_cache[drive] = (current_time, new_r, new_w)
-        info = Info(drive, read, write, r_count, w_count)
+        info = Disk_Info(drive, read, write, r_count, w_count)
         d_details.append(info)
 
     return d_details
@@ -218,9 +229,9 @@ def network_table():
     d_details = net_info_cal()
     for d_detail in d_details:
         dev_name = d_detail.device.lower()
-        if any(x in dev_name for x in ("wi-fi", "wlp", "wlan", "wireless")):
+        if "wi-fi" in dev_name or "wlp" in dev_name or "wlan" in dev_name or "wireless" in dev_name:
             emoji = "🛜"
-        elif any(x in dev_name for x in ("ethernet", "eth", "enp", "en1", "lan")):
+        elif "ethernet" in dev_name or "eth" in dev_name or "enp" in dev_name or "en1" in dev_name or "lan" in dev_name:
             emoji = "🔌"
         else:
             emoji = "🌐"
@@ -237,7 +248,6 @@ def network_table():
 
 
 def net_info_cal():
-    Info = namedtuple("Info", ["device", "upload", "download", "sent", "recv"])
     data = psutil.net_io_counters(pernic=True, nowrap=True) or {}
     d_details = []
     current_time = time.monotonic()
@@ -249,8 +259,8 @@ def net_info_cal():
         if sent_bytes == 0 and recv_bytes == 0:
             continue
 
-        new_s = sent_bytes / (1024**2)
-        new_r = recv_bytes / (1024**2)
+        new_s = sent_bytes / mb
+        new_r = recv_bytes / mb
 
         if device in _net_cache:
             old_time, old_s, old_r = _net_cache[device]
@@ -264,7 +274,7 @@ def net_info_cal():
             upload, download = 0.0, 0.0
 
         _net_cache[device] = (current_time, new_s, new_r)
-        info = Info(device, upload, download, new_s, new_r)
+        info = Net_Info(device, upload, download, new_s, new_r)
         d_details.append(info)
 
     return d_details

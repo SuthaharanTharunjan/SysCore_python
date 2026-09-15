@@ -38,6 +38,8 @@ GRADIENT = [
 ]
 
 _gradient_colour_cache={}
+_bar_cache={}
+
 bar_width = 15
 
 def hex_to_rgb(color):
@@ -76,24 +78,30 @@ def gradient_color(i):
 
 
 def usage_details(usage, name=None):
-    filled = round((usage / 100) * bar_width)
-
-    text = Text()
-
-    for i in range(bar_width):
-        if i < filled:
-            color = _gradient_colour_cache[i]
-
-            text.append("▰", style=color)
-        else:
-            text.append("▰", style="grey35")
-
-    text.append(f" {usage:>3.0f}%")
-
-    return text
+    usage=round(usage)
+    return _bar_cache[usage]
 
 def _cache_creator():
     for i in range(bar_width):
         gradient_color(i)
 
+def _bar_cache_creator():
+    for i in range(0,101):
+        filled = round((i / 100) * bar_width)
+        
+        text = Text()
+        
+        for p in range(bar_width):
+            if p < filled:
+                color = _gradient_colour_cache[p]
+    
+                text.append("▰", style=color)
+            else:
+                text.append("▰", style="grey35")
+    
+        text.append(f" {i:>3.0f}%")
+    
+        _bar_cache[i]=text
+
 _cache_creator()
+_bar_cache_creator()
