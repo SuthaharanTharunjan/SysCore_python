@@ -223,7 +223,7 @@ def network_table():
     table.add_column("Upload")
     table.add_column("Download")
     table.add_column("Sent")
-    table.add_column("Recieved")
+    table.add_column("Received")
 
     d_details = net_info_cal()
     for d_detail in d_details:
