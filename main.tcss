@@ -94,3 +94,10 @@
 #fan_table{
     width: 90%;
 }
+#process_container{
+    width: 100%;
+    align: center top;
+}
+#process_table{
+    width: 99%;
+}

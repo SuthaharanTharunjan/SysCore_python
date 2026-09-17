@@ -85,8 +85,11 @@ class ProcessScreen(Screen):
 
     def on_mount(self):
         self.is_active_screen = True
+        self.process_limit_active = True  # FIX 1: Initialize the limit state
+        self.old_processes_pid = set()
         self.table = self.query_one(DataTable)
-  
+
+        self.table.cursor_type="row"
         self.table.add_column("Name", key="0")
         self.table.add_column("PID", key="1")
         self.table.add_column("PPID", key="2")
@@ -95,60 +98,58 @@ class ProcessScreen(Screen):
         self.table.add_column("CPU", key="5")
         self.table.add_column("RAM", key="6")
 
-        self.process_cache = {}
-        self.old_processes_pid=set()
-        for data in get_process_data(50):
-            self.old_processes_pid.add(data[1])
-            self.table.add_row(*data, key=data[1])
-            self.process_cache[data[1]] = data
+    def on_key(self, event):
+        if event.character == "l":
+            self.process_limit_active = not self.process_limit_active
+            self.notify(f"Process Limit (50): {'ON' if self.process_limit_active else 'OFF'}")
+            self.fetch_process_table_data()
 
-    def row_updator(self,processes):
-        self.new_processes_pid=set()
+    def row_updator(self, processes):
+        self.new_processes_pid = set()
+
         for data in processes:
-            row_key=data[1]
+            row_key = str(data[1])
             self.new_processes_pid.add(row_key)
+
             if row_key in self.old_processes_pid:
-                self.table.update_cell(row_key, "0", data[0])
-                self.table.update_cell(row_key, "1", data[1])
-                self.table.update_cell(row_key, "2", data[2])
-                self.table.update_cell(row_key, "3", data[3])
-                self.table.update_cell(row_key, "4", data[4])
-                self.table.update_cell(row_key, "5", data[5])
-                self.table.update_cell(row_key, "6", data[6])
+                for col_idx, val in enumerate(data):
+                    self.table.update_cell(row_key, str(col_idx), str(val))
             else:
-                self.table.add_row(*data, key=data[1])
-        del_processes=self.old_processes_pid-self.new_processes_pid
+                self.table.add_row(*[str(val) for val in data], key=row_key)
+
+        del_processes = self.old_processes_pid - self.new_processes_pid
         for pid in del_processes:
-            self.table.remove_row(pid)
+            try:
+                self.table.remove_row(pid)
+            except Exception:
+                pass
 
         self.old_processes_pid = self.new_processes_pid
 
     def on_screen_resume(self):
-        # 1. When you enter the screen, set the flag to True and start the loop
         self.is_active_screen = True
         self.fetch_process_table_data()
 
     def on_screen_suspend(self):
-        # 2. When you leave the screen, set to False. This breaks the infinite loop!
         self.is_active_screen = False
 
-    @work(thread=True, name="process_fetcher",exclusive=True)
+    @work(thread=True, name="process_fetcher", exclusive=True)
     def fetch_process_table_data(self):
-        return list(get_process_data(50))
+        limit = 50 if getattr(self, "process_limit_active", True) else None
+        return list(get_process_data(limit))
 
     def on_worker_state_changed(self, event: Worker.StateChanged):
-        if self.is_active_screen == True:
-            if event.worker.name == "process_fetcher":
-                if event.state == WorkerState.SUCCESS:
-                    self.row_updator(event.worker.result)
-                    self.set_timer(1.5, self.fetch_process_table_data)
+        if self.is_active_screen and event.worker.name == "process_fetcher":
+            if event.state == WorkerState.SUCCESS:
+                self.row_updator(event.worker.result)
+                self.set_timer(1.5, self.fetch_process_table_data)
 
-                elif event.state == WorkerState.ERROR:
-                    self.notify(
+            elif event.state == WorkerState.ERROR:
+                self.notify(
                     f"Process fetch failed: {event.worker.error}",
                     severity="error",
                     timeout=5,
-                    )
+                )
 
 class SysCore(App):
     CSS_PATH = "main.tcss"
