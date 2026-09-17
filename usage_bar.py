@@ -95,9 +95,9 @@ def _bar_cache_creator():
             if p < filled:
                 color = _gradient_colour_cache[p]
     
-                text.append("▰", style=color)
+                text.append("■", style=f"bold {color}")
             else:
-                text.append("▰", style="grey35")
+                text.append("■", style="bold grey35")
     
         text.append(f" {i:>3.0f}%")
     
