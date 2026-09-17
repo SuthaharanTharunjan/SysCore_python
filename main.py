@@ -1,7 +1,7 @@
 from textual.app import App, ComposeResult
 from textual.containers import ScrollableContainer, Horizontal, Vertical
 from textual.screen import Screen
-from textual.widgets import Footer, Header, Static
+from textual.widgets import Footer, Header, Static, DataTable
 from textual import work
 from textual.worker import Worker, WorkerState
 from rich.console import Console
@@ -15,10 +15,11 @@ from func import (
     cpu_table_2,
     disk_table_1,
     disk_table_2,
+    get_process_data,
     fan_table,
     network_table,
     process_table_1,
-    process_table_2,
+    #process_table_2,
     program_name,
     ram_table,
 )
@@ -80,36 +81,74 @@ class ProcessScreen(Screen):
         yield Header()
         yield Footer()
         with ScrollableContainer(id="process_container"):
-            yield Static("Loading......", id="process_table_2")
+            yield DataTable(id="process_table")
 
     def on_mount(self):
         self.is_active_screen = True
+        self.table = self.query_one(DataTable)
+  
+        self.table.add_column("Name", key="0")
+        self.table.add_column("PID", key="1")
+        self.table.add_column("PPID", key="2")
+        self.table.add_column("Status", key="3")
+        self.table.add_column("User Name", key="4")
+        self.table.add_column("CPU", key="5")
+        self.table.add_column("RAM", key="6")
+
+        self.process_cache = {}
+        self.old_processes_pid=set()
+        for data in get_process_data():
+            self.old_processes_pid.add(data[1])
+            self.table.add_row(*data, key=data[1])
+            self.process_cache[data[1]] = data
+
+    def row_updator(self,processes):
+        self.new_processes_pid=set()
+        for data in processes:
+            row_key=data[1]
+            self.new_processes_pid.add(row_key)
+            if row_key in self.old_processes_pid:
+                self.table.update_cell(row_key, "0", data[0])
+                self.table.update_cell(row_key, "1", data[1])
+                self.table.update_cell(row_key, "2", data[2])
+                self.table.update_cell(row_key, "3", data[3])
+                self.table.update_cell(row_key, "4", data[4])
+                self.table.update_cell(row_key, "5", data[5])
+                self.table.update_cell(row_key, "6", data[6])
+            else:
+                self.table.add_row(*data, key=data[1])
+        del_processes=self.old_processes_pid-self.new_processes_pid
+        for pid in del_processes:
+            self.table.remove_row(pid)
+
+        self.old_processes_pid = self.new_processes_pid
 
     def on_screen_resume(self):
         # 1. When you enter the screen, set the flag to True and start the loop
         self.is_active_screen = True
-        self.process_table()
+        self.fetch_process_table_data()
 
     def on_screen_suspend(self):
         # 2. When you leave the screen, set to False. This breaks the infinite loop!
         self.is_active_screen = False
 
     @work(thread=True, name="process_fetcher",exclusive=True)
-    def process_table(self):
-        return process_table_2()
+    def fetch_process_table_data(self):
+        return list(get_process_data())
 
     def on_worker_state_changed(self, event: Worker.StateChanged):
         if self.is_active_screen == True:
             if event.worker.name == "process_fetcher":
                 if event.state == WorkerState.SUCCESS:
-                    self.query_one("#process_table_2", Static).update(event.worker.result)
-                    self.set_timer(1.5, self.process_table)
+                    self.row_updator(event.worker.result)
+                    self.set_timer(1.5, self.fetch_process_table_data)
 
                 elif event.state == WorkerState.ERROR:
-                    self.query_one("#process_table_2", Static).update(
-                        f"[red]Pipeline failed: {event.worker.error}[/red]"
+                    self.notify(
+                    f"Process fetch failed: {event.worker.error}",
+                    severity="error",
+                    timeout=5,
                     )
-
 
 class SysCore(App):
     CSS_PATH = "main.tcss"

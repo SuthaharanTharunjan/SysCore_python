@@ -402,8 +402,8 @@ def process_table_2():
     return table
 
 
-def get_process_data():
-    no = 1
+def get_process_data(limit=None):
+    process_list=[]
     for p in psutil.process_iter(
         [
             "name",
@@ -420,20 +420,22 @@ def get_process_data():
             cpu = proc["cpu_percent"] or 0.0
             mem = proc["memory_percent"] or 0.0
             data = (
-                f"{no}",
                 f"{proc['name'] or '-'}",
-                f"{proc['pid'] or '-'}",
-                f"{proc['ppid'] or '-'}",
+                f"{proc['pid']}",
+                f"{proc['ppid']}",
                 f"{proc['status'] or '-'}",
                 f"{proc['username'] or '-'}",
                 f"{cpu:.2f}",
                 f"{mem:.2f}",
             )
-            no += 1
-            yield data
+            process_list.append(data)
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             continue
 
+    process_list.sort(key=lambda x: float(x[6]), reverse=True)
+    if limit:
+        process_list=process_list[:limit]
+    return process_list   
 
 def program_name():
     ascii_art = r"""
