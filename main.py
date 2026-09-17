@@ -97,7 +97,7 @@ class ProcessScreen(Screen):
 
         self.process_cache = {}
         self.old_processes_pid=set()
-        for data in get_process_data():
+        for data in get_process_data(50):
             self.old_processes_pid.add(data[1])
             self.table.add_row(*data, key=data[1])
             self.process_cache[data[1]] = data
@@ -134,7 +134,7 @@ class ProcessScreen(Screen):
 
     @work(thread=True, name="process_fetcher",exclusive=True)
     def fetch_process_table_data(self):
-        return list(get_process_data())
+        return list(get_process_data(50))
 
     def on_worker_state_changed(self, event: Worker.StateChanged):
         if self.is_active_screen == True:
