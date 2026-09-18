@@ -404,48 +404,35 @@ def process_table_2():
 core_no=None
 def get_process_data(limit=None):
     global core_no
-    if not core_no:
-        core_no = psutil.cpu_count(logical=True) or 1
-        
-    process_list = []
-    
-    for p in psutil.process_iter(["name", "pid", "ppid", "status", "username", "cpu_percent", "memory_percent"]):
-        proc = p.info
-        cpu_raw = proc["cpu_percent"] or 0.0
-        mem = proc["memory_percent"] or 0.0
-        
-        cpu = cpu_raw / core_no
-        score = (cpu * 0.6) + (mem * 0.4)
-        
-        process_list.append((
-            score, 
-            proc['name'] or '-',
-            proc['pid'],
-            proc['ppid'] or '-',
-            proc['status'] or '-',
-            proc['username'] or '-',
-            cpu,
-            mem
-        ))
+    core_no = core_no or (psutil.cpu_count(logical=True) or 1)
 
-    process_list.sort(key=lambda x: x[0], reverse=True)
-    
+    # 1. Generator Expression (C-optimized, no .append() overhead)
+    processes = sorted(
+        (
+            # Tuple index 0: The mathematical score
+            (((p.info["cpu_percent"] or 0.0) / core_no * 0.6) + ((p.info["memory_percent"] or 0.0) * 0.4), p.info)
+            for p in psutil.process_iter(["name", "pid", "ppid", "status", "username", "cpu_percent", "memory_percent"])
+        ),
+        key=lambda x: x[0], 
+        reverse=True
+    )
+
     if limit:
-        process_list = process_list[:limit]
-        
-    formatted_list = []
-    for item in process_list:
-        formatted_list.append((
-            str(item[1]),      # Name
-            str(item[2]),      # PID
-            str(item[3]),      # PPID
-            str(item[4]),      # Status
-            str(item[5]),      # Username
-            f"{item[6]:.2f}",  # CPU
-            f"{item[7]:.2f}",  # RAM
-        ))
-        
-    return formatted_list   
+        processes = processes[:limit]
+
+    # 2. List comprehension to format only the surviving processes
+    return [
+        (
+            info["name"] or "-",
+            str(info["pid"]),
+            str(info["ppid"] or "-"),
+            info["status"] or "-",
+            info["username"] or "-",
+            f"{(info['cpu_percent'] or 0.0) / core_no:.2f}",
+            f"{info['memory_percent'] or 0.0:.2f}"
+        )
+        for _, info in processes
+    ]
 
 def program_name():
     ascii_art = r"""

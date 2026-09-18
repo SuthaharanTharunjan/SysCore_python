@@ -105,32 +105,39 @@ class ProcessScreen(Screen):
             self.fetch_process_table_data()
 
     def row_updator(self, processes):
-        new_processes_pid = set()
+        old_pids = self.old_processes_pid
+        new_pids = set()
+        update_cell = self.table.update_cell
+        add_row = self.table.add_row
+        remove_row = self.table.remove_row
 
         with self.app.batch_update():
             for data in processes:
-                row_key = str(data[1])  # PID
-                new_processes_pid.add(row_key)
+                pid = data[1] # PID
+                new_pids.add(pid)
 
-                if row_key in self.old_processes_pid:
-                    for col_idx, val in enumerate(data):
-                        self.table.update_cell(row_key, str(col_idx), val)
+                if pid in old_pids:
+                    update_cell(pid, "0", data[0])
+                    update_cell(pid, "2", data[2])
+                    update_cell(pid, "3", data[3])
+                    update_cell(pid, "4", data[4])
+                    update_cell(pid, "5", data[5])
+                    update_cell(pid, "6", data[6])
                 else:
-                    self.table.add_row(*data, key=row_key)
+                    add_row(*data, key=pid)
 
-            del_processes = self.old_processes_pid - new_processes_pid
-            for pid in del_processes:
+            for pid in old_pids - new_pids:
                 try:
-                    self.table.remove_row(pid)
+                    remove_row(pid)
                 except Exception:
                     pass
 
-            self.old_processes_pid = new_processes_pid
+        self.old_processes_pid = new_pids
 
-            try:
-                self.table.sort("5", key=float, reverse=True)
-            except Exception:
-                pass
+        try:
+            self.table.sort("5", key=float, reverse=True)
+        except Exception:
+            pass
 
     def on_screen_resume(self):
         self.is_active_screen = True
@@ -148,7 +155,7 @@ class ProcessScreen(Screen):
         if self.is_active_screen and event.worker.name == "process_fetcher":
             if event.state == WorkerState.SUCCESS:
                 self.row_updator(event.worker.result)
-                self.set_timer(1, self.fetch_process_table_data)
+                self.set_timer(1.2, self.fetch_process_table_data)
 
             elif event.state == WorkerState.ERROR:
                 self.notify(f"Process fetch failed: {event.worker.error}", severity="error", timeout=5)
