@@ -115,8 +115,8 @@ class ProcessScreen(Screen):
         elif event.character == "c" :
             self.locked_row_key = None
             self.table.cursor_type = "none"
-            self.notify("Selection cleared", severity="information")
-        elif event.key == "up" or "down" and self.table.cursor_type == "none":
+            self.notify("Selection clearedand free scroll enabled", severity="information")
+        elif event.key in ("up", "down") and self.table.cursor_type == "none":
             self.table.cursor_type = "row"
 
     def on_click(self, event):
@@ -137,7 +137,7 @@ class ProcessScreen(Screen):
 
             # 2. Extract the PID from the 2nd column (index 1)
             row_data = self.table.get_row_at(row_index)
-            pid = int(row_data[1])
+            pid = int(row_data[1].plain)
             name = row_data[0]
 
             # 3. Send the terminate signal

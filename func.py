@@ -5,6 +5,7 @@ import psutil
 import time
 from collections import namedtuple
 from usage_bar import usage_details
+import functools
 
 mb=1024 ** 2
 gb=1024 ** 3
@@ -389,6 +390,7 @@ def process_table_1():
 core_no=None
 USER_CACHE = {}
 
+@functools.lru_cache(maxsize=2048)
 def get_username(pid):
     """Fetch username only when needed and cache the result."""
     if pid not in USER_CACHE:
