@@ -393,12 +393,10 @@ USER_CACHE = {}
 @functools.lru_cache(maxsize=2048)
 def get_username(pid):
     """Fetch username only when needed and cache the result."""
-    if pid not in USER_CACHE:
-        try:
-            USER_CACHE[pid] = psutil.Process(pid).username()
-        except (psutil.NoSuchProcess, psutil.AccessDenied):
-            USER_CACHE[pid] = "-"
-    return USER_CACHE[pid]
+    try:
+        return psutil.Process(pid).username()
+    except (psutil.NoSuchProcess, psutil.AccessDenied):
+        return "-"
 
 def get_process_data(limit=None):
     global core_no
