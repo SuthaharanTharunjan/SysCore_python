@@ -7,6 +7,7 @@ from textual.worker import Worker, WorkerState
 from rich.console import Console
 from textual.events import MouseMove
 from textual.theme import Theme
+import psutil
 import sys
 import shelve
 from func import (
@@ -103,7 +104,45 @@ class ProcessScreen(Screen):
             self.process_limit_active = not self.process_limit_active
             self.notify(f"Process Limit (50): {'ON' if self.process_limit_active else 'OFF'}")
             self.fetch_process_table_data()
+        elif event.character == "k":
+            self.kill_selected_process()
 
+    def kill_selected_process(self):
+        try:
+            # 1. Get the current cursor row index
+            row_index = self.table.cursor_row
+            if row_index is None:
+                return
+
+            # 2. Extract the PID from the 2nd column (index 1)
+            row_data = self.table.get_row_at(row_index)
+            pid = int(row_data[1])
+            name = row_data[0]
+
+            # 3. Send the terminate signal
+            proc = psutil.Process(pid)
+            try:
+                proc.terminate()      # Ask to close
+                proc.wait(timeout=3)  # Give it 3 seconds to save data
+            except psutil.TimeoutExpired:
+                proc.kill()
+            
+            self.notify(f"Terminated {name} (PID: {pid})", severity="information")
+
+            # 4. Instantly remove it from the UI so it feels snappy
+            try:
+                self.table.remove_row(str(pid))
+                self.old_processes_pid.remove(str(pid))
+            except Exception:
+                pass
+
+        except psutil.NoSuchProcess:
+            self.notify("Process no longer exists.", severity="warning")
+        except psutil.AccessDenied:
+            self.notify("Access Denied! You must run this script as Admin/Root to kill this process.", severity="error")
+        except Exception as e:
+            self.notify(f"Error: {e}", severity="error")
+            
     def row_updator(self, processes):
         old_pids = self.old_processes_pid
         new_pids = set()
@@ -111,21 +150,28 @@ class ProcessScreen(Screen):
         add_row = self.table.add_row
         remove_row = self.table.remove_row
 
+        # --- 1. SNAPSHOT THE CURRENTLY SELECTED PROCESS PID ---
+        locked_row_key = None
+        if self.table.row_count > 0:
+            try:
+                locked_row_key = self.table.coordinate_to_cell_key(self.table.cursor_coordinate)[0]
+            except Exception:
+                pass
+
+        # --- 2. UPDATE THE TABLE ---        
         with self.app.batch_update():
             for data in processes:
                 pid = data[1] # PID
                 new_pids.add(pid)
 
                 if pid in old_pids:
-                    update_cell(pid, "0", data[0])
-                    update_cell(pid, "2", data[2])
                     update_cell(pid, "3", data[3])
-                    update_cell(pid, "4", data[4])
                     update_cell(pid, "5", data[5])
                     update_cell(pid, "6", data[6])
                 else:
                     add_row(*data, key=pid)
 
+            # Cleanup dead processes
             for pid in old_pids - new_pids:
                 try:
                     remove_row(pid)
@@ -134,10 +180,21 @@ class ProcessScreen(Screen):
 
         self.old_processes_pid = new_pids
 
+        # Sort the UI dynamically by CPU (Column "5")
         try:
-            self.table.sort("5", key=float, reverse=True)
+            self.table.sort("6", key=float, reverse=True)
         except Exception:
             pass
+
+        # --- 3. RESTORE THE CURSOR PROCESS ---
+        if locked_row_key:
+            try:
+                new_index = self.table.get_row_index(locked_row_key)
+                # Snap the cursor (and the viewport scroll) to follow it
+                self.table.move_cursor(row=new_index)
+            except Exception:
+                pass
+
 
     def on_screen_resume(self):
         self.is_active_screen = True
