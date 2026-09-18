@@ -401,41 +401,51 @@ def process_table_2():
         table.add_row(*data)
     return table
 
-
+core_no=None
 def get_process_data(limit=None):
-    process_list=[]
-    for p in psutil.process_iter(
-        [
-            "name",
-            "pid",
-            "ppid",
-            "status",
-            "username",
-            "cpu_percent",
-            "memory_percent",
-        ]
-    ):
-        try:
-            proc = p.info
-            cpu = proc["cpu_percent"] or 0.0
-            mem = proc["memory_percent"] or 0.0
-            data = (
-                f"{proc['name'] or '-'}",
-                f"{proc['pid']}",
-                f"{proc['ppid']}",
-                f"{proc['status'] or '-'}",
-                f"{proc['username'] or '-'}",
-                f"{cpu:.2f}",
-                f"{mem:.2f}",
-            )
-            process_list.append(data)
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            continue
+    global core_no
+    if not core_no:
+        core_no = psutil.cpu_count(logical=True) or 1
+        
+    process_list = []
+    
+    for p in psutil.process_iter(["name", "pid", "ppid", "status", "username", "cpu_percent", "memory_percent"]):
+        proc = p.info
+        cpu_raw = proc["cpu_percent"] or 0.0
+        mem = proc["memory_percent"] or 0.0
+        
+        cpu = cpu_raw / core_no
+        score = (cpu * 0.6) + (mem * 0.4)
+        
+        process_list.append((
+            score, 
+            proc['name'] or '-',
+            proc['pid'],
+            proc['ppid'] or '-',
+            proc['status'] or '-',
+            proc['username'] or '-',
+            cpu,
+            mem
+        ))
 
-    process_list.sort(key=lambda x: float(x[6]), reverse=True)
+    process_list.sort(key=lambda x: x[0], reverse=True)
+    
     if limit:
-        process_list=process_list[:limit]
-    return process_list   
+        process_list = process_list[:limit]
+        
+    formatted_list = []
+    for item in process_list:
+        formatted_list.append((
+            str(item[1]),      # Name
+            str(item[2]),      # PID
+            str(item[3]),      # PPID
+            str(item[4]),      # Status
+            str(item[5]),      # Username
+            f"{item[6]:.2f}",  # CPU
+            f"{item[7]:.2f}",  # RAM
+        ))
+        
+    return formatted_list   
 
 def program_name():
     ascii_art = r"""

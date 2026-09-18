@@ -99,5 +99,5 @@
     align: center top;
 }
 #process_table{
-    width: 99%;
+    width: 1fr;
 }
