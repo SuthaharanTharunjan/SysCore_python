@@ -386,22 +386,18 @@ def process_table_1():
 
     return table
 
-
-def process_table_2():
-    table = Table(show_header=True, box=box.MARKDOWN, padding=(0, 1), expand=True)
-    table.add_column("No.")
-    table.add_column("Name")
-    table.add_column("PID")
-    table.add_column("PPID")
-    table.add_column("Status")
-    table.add_column("User Name")
-    table.add_column("CPU")
-    table.add_column("RAM")
-    for data in get_process_data():
-        table.add_row(*data)
-    return table
-
 core_no=None
+USER_CACHE = {}
+
+def get_username(pid):
+    """Fetch username only when needed and cache the result."""
+    if pid not in USER_CACHE:
+        try:
+            USER_CACHE[pid] = psutil.Process(pid).username()
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            USER_CACHE[pid] = "-"
+    return USER_CACHE[pid]
+
 def get_process_data(limit=None):
     global core_no
     core_no = core_no or (psutil.cpu_count(logical=True) or 1)
@@ -411,7 +407,7 @@ def get_process_data(limit=None):
         (
             # Tuple index 0: The mathematical score
             (((p.info["cpu_percent"] or 0.0) / core_no * 0.6) + ((p.info["memory_percent"] or 0.0) * 0.4), p.info)
-            for p in psutil.process_iter(["name", "pid", "ppid", "status", "username", "cpu_percent", "memory_percent"])
+            for p in psutil.process_iter(["name", "pid", "ppid", "status", "cpu_percent", "memory_percent"])
         ),
         key=lambda x: x[0], 
         reverse=True
@@ -427,7 +423,7 @@ def get_process_data(limit=None):
             str(info["pid"]),
             str(info["ppid"] or "-"),
             info["status"] or "-",
-            info["username"] or "-",
+            get_username(info["pid"]),
             f"{(info['cpu_percent'] or 0.0) / core_no:.2f}",
             f"{info['memory_percent'] or 0.0:.2f}"
         )

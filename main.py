@@ -7,9 +7,12 @@ from textual.worker import Worker, WorkerState
 from rich.console import Console
 from textual.events import MouseMove
 from textual.theme import Theme
+from textual import events
+from rich.text import Text
 import psutil
 import sys
 import shelve
+import time
 from func import (
     bat_table,
     cpu_table_1,
@@ -89,15 +92,18 @@ class ProcessScreen(Screen):
         self.process_limit_active = True 
         self.old_processes_pid = set()
 
+
+        self.dynamic_cons=3
+
         self.table = self.query_one(DataTable)
         self.table.cursor_type="row"
-        self.table.add_column("Name", key="0")
-        self.table.add_column("PID", key="1")
-        self.table.add_column("PPID", key="2")
-        self.table.add_column("Status", key="3")
-        self.table.add_column("User Name", key="4")
-        self.table.add_column("CPU", key="5")
-        self.table.add_column("RAM", key="6")
+        self.table.add_column("Name", key="0", width=6*self.dynamic_cons)
+        self.table.add_column(Text("PID",justify="right"), key="1", width=2*self.dynamic_cons)
+        self.table.add_column(Text("PPID",justify="left"), key="2", width=2*self.dynamic_cons)
+        self.table.add_column("Status", key="3", width=3*self.dynamic_cons)
+        self.table.add_column("User Name", key="4", width=4*self.dynamic_cons)
+        self.table.add_column("CPU", key="5", width=1*self.dynamic_cons)
+        self.table.add_column("RAM", key="6", width=1*self.dynamic_cons)
 
     def on_key(self, event):
         if event.character == "l":
@@ -106,8 +112,23 @@ class ProcessScreen(Screen):
             self.fetch_process_table_data()
         elif event.character == "k":
             self.kill_selected_process()
+        elif event.character == "c" :
+            self.locked_row_key = None
+            self.table.cursor_type = "none"
+            self.notify("Selection cleared", severity="information")
+        elif event.key == "up" or "down" and self.table.cursor_type == "none":
+            self.table.cursor_type = "row"
 
+    def on_click(self, event):
+        if hasattr(self, "table") and self.table.cursor_type == "none":
+            self.locked_row_key = None
+            self.table.cursor_type = "row"
+
+    
     def kill_selected_process(self):
+        if self.table.cursor_type == "none":
+            self.notify("No process selected.", severity="warning")
+            return
         try:
             # 1. Get the current cursor row index
             row_index = self.table.cursor_row
@@ -142,7 +163,40 @@ class ProcessScreen(Screen):
             self.notify("Access Denied! You must run this script as Admin/Root to kill this process.", severity="error")
         except Exception as e:
             self.notify(f"Error: {e}", severity="error")
+
+    def on_resize(self, event: events.Resize) -> None:
+        if not hasattr(self, "table") or not self.table.columns:
+            return
+
+        ratios = [6, 2, 2, 3, 4, 1, 1]
+        num_cols = len(ratios)
+        total_ratio = sum(ratios)  # 19
+
+        # 1. Total width of the table container on screen
+        table_width = self.table.size.width or event.size.width
+
+        # 2. Subtract 2 characters of cell padding per column + 1 for vertical scrollbar
+        padding_and_scrollbar = (num_cols * 2) + 1
+        available_text_width = max(total_ratio, table_width - padding_and_scrollbar)
+
+        # 3. Base unit width and remainder
+        unit = available_text_width // total_ratio
+        remainder = available_text_width % total_ratio
+
+        # 4. Assign widths and distribute the remainder to the widest columns first
+        cols = list(self.table.columns.values())
+        for i, (column, ratio) in enumerate(zip(cols, ratios)):
+            col_width = ratio * unit
+            # Hand out remaining pixels one by one to avoid right-hand gaps
+            if remainder > 0:
+                col_width += 1
+                remainder -= 1
             
+            # Ensure columns don't shrink to 0 width on very tiny screens
+            column.width = max(1, col_width)
+        self.table.refresh(layout=True)
+
+
     def row_updator(self, processes):
         old_pids = self.old_processes_pid
         new_pids = set()
@@ -151,10 +205,10 @@ class ProcessScreen(Screen):
         remove_row = self.table.remove_row
 
         # --- 1. SNAPSHOT THE CURRENTLY SELECTED PROCESS PID ---
-        locked_row_key = None
-        if self.table.row_count > 0:
+        self.locked_row_key = None
+        if self.table.row_count > 0 and self.table.cursor_type != "none":
             try:
-                locked_row_key = self.table.coordinate_to_cell_key(self.table.cursor_coordinate)[0]
+                self.locked_row_key = self.table.coordinate_to_cell_key(self.table.cursor_coordinate)[0]
             except Exception:
                 pass
 
@@ -169,7 +223,7 @@ class ProcessScreen(Screen):
                     update_cell(pid, "5", data[5])
                     update_cell(pid, "6", data[6])
                 else:
-                    add_row(*data, key=pid)
+                    add_row(data[0],Text(data[1],justify="right"),Text(data[2],justify="left"),*data[3:], key=pid)
 
             # Cleanup dead processes
             for pid in old_pids - new_pids:
@@ -187,9 +241,9 @@ class ProcessScreen(Screen):
             pass
 
         # --- 3. RESTORE THE CURSOR PROCESS ---
-        if locked_row_key:
+        if self.locked_row_key:
             try:
-                new_index = self.table.get_row_index(locked_row_key)
+                new_index = self.table.get_row_index(self.locked_row_key)
                 # Snap the cursor (and the viewport scroll) to follow it
                 self.table.move_cursor(row=new_index)
             except Exception:
