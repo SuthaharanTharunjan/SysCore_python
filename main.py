@@ -120,15 +120,24 @@ class ProcessScreen(Screen):
             self.locked_row_key = None
             self.table.cursor_type = "none"
             self.notify(
-                "Selection clearedand free scroll enabled", severity="information"
+                "Selection cleared and free scroll enabled", severity="information"
             )
         elif event.key in ("up", "down") and self.table.cursor_type == "none":
+            self.locked_row_key = None
             self.table.cursor_type = "row"
+            self.notify(
+                "Selection lock enabled and free scroll disabled",
+                severity="information",
+            )
 
     def on_click(self, event):
         if hasattr(self, "table") and self.table.cursor_type == "none":
             self.locked_row_key = None
             self.table.cursor_type = "row"
+            self.notify(
+                "Selection lock enabled and free scroll disabled",
+                severity="information",
+            )
 
     def kill_selected_process(self):
         if self.table.cursor_type == "none":
