@@ -1,5 +1,12 @@
 # 🖥️ SysCore
 
+<pre style="display:flex; overflow-x: auto; gap:12px; white-space: nowrap;">
+<img src="images/main_screen.png" alt="Main Screen img" width="600">
+<img src="images/process_screen.png" alt="Process Screen img" width="600">
+<img src="images/palette.png" alt="Palette" width="600">
+<img src="images/themes.png" alt="Themes selection" width="600">
+</pre>
+
 #### 🎥 Video Demo: https://youtu.be/l3YHsJunmEA
 
 #### 📖 Description
