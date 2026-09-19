@@ -1,6 +1,6 @@
 from rich.text import Text
 
-'''
+"""
 GRADIENT = [
     "#32B8C8",  # cyan
     "#42B8BE",
@@ -18,7 +18,7 @@ GRADIENT = [
     "#B94D3A",
     "#9E3435",  # deep red
 ]
-'''
+"""
 GRADIENT = [
     "#00BCD5",  # cyan
     "#00BECF",
@@ -37,17 +37,18 @@ GRADIENT = [
     "#A80004",
 ]
 
-_gradient_colour_cache={}
-_bar_cache={}
+_gradient_colour_cache = {}
+_bar_cache = {}
 
 bar_width = 15
 
+
 def hex_to_rgb(color):
     color = color.lstrip("#")
-    return tuple(int(color[i:i + 2], 16) for i in (0, 2, 4))
+    return tuple(int(color[i : i + 2], 16) for i in (0, 2, 4))
 
 
-def interpolate_color(color1, color2, amount,i):
+def interpolate_color(color1, color2, amount, i):
     r1, g1, b1 = hex_to_rgb(color1)
     r2, g2, b2 = hex_to_rgb(color2)
 
@@ -55,7 +56,7 @@ def interpolate_color(color1, color2, amount,i):
     g = round(g1 + (g2 - g1) * amount)
     b = round(b1 + (b2 - b1) * amount)
 
-    _gradient_colour_cache[i]=(f"rgb({r},{g},{b})")
+    _gradient_colour_cache[i] = f"rgb({r},{g},{b})"
 
 
 def gradient_color(i):
@@ -66,42 +67,40 @@ def gradient_color(i):
     index = int(scaled)
 
     if index >= len(GRADIENT) - 1:
-        _gradient_colour_cache[i]=GRADIENT[-1]
+        _gradient_colour_cache[i] = GRADIENT[-1]
     else:
         amount = scaled - index
-        interpolate_color(
-            GRADIENT[index],
-            GRADIENT[index + 1],
-            amount,
-            i
-        )
+        interpolate_color(GRADIENT[index], GRADIENT[index + 1], amount, i)
 
 
 def usage_details(usage, name=None):
-    usage=round(usage)
+    usage = round(usage)
     return _bar_cache[usage]
+
 
 def _cache_creator():
     for i in range(bar_width):
         gradient_color(i)
 
+
 def _bar_cache_creator():
-    for i in range(0,101):
+    for i in range(0, 101):
         filled = round((i / 100) * bar_width)
-        
+
         text = Text()
-        
+
         for p in range(bar_width):
             if p < filled:
                 color = _gradient_colour_cache[p]
-    
+
                 text.append("■", style=f"bold {color}")
             else:
                 text.append("■", style="bold grey35")
-    
+
         text.append(f" {i:>3.0f}%")
-    
-        _bar_cache[i]=text
+
+        _bar_cache[i] = text
+
 
 _cache_creator()
 _bar_cache_creator()

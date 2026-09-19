@@ -12,7 +12,6 @@ from rich.text import Text
 import psutil
 import sys
 import shelve
-import time
 from func import (
     bat_table,
     cpu_table_1,
@@ -23,7 +22,6 @@ from func import (
     fan_table,
     network_table,
     process_table_1,
-    #process_table_2,
     program_name,
     ram_table,
 )
@@ -65,7 +63,7 @@ class MainScreen(Screen):
         self.query_one("#disk_table_2", Static).update(disk_table_2())
         # network_table
         self.query_one("#network_table", Static).update(network_table())
-        
+
     def update_slow_table(self):
         # disk_table
         self.query_one("#disk_table_1", Static).update(disk_table_1())
@@ -78,7 +76,8 @@ class MainScreen(Screen):
         self.query_one("#title", Static).update(program_name())
         self.query_one("#cpu_table_2", Static).update(cpu_table_2())
         self.set_interval(1.2, self.update_fast_table)
-        self.set_interval(3,self.update_slow_table)
+        self.set_interval(3, self.update_slow_table)
+
 
 class ProcessScreen(Screen):
     def compose(self) -> ComposeResult:
@@ -89,33 +88,40 @@ class ProcessScreen(Screen):
 
     def on_mount(self):
         self.is_active_screen = True
-        self.process_limit_active = True 
+        self.process_limit_active = True
         self.old_processes_pid = set()
 
-
-        self.dynamic_cons=3
+        self.dynamic_cons = 3
 
         self.table = self.query_one(DataTable)
-        self.table.cursor_type="row"
-        self.table.add_column("Name", key="0", width=6*self.dynamic_cons)
-        self.table.add_column(Text("PID",justify="right"), key="1", width=2*self.dynamic_cons)
-        self.table.add_column(Text("PPID",justify="left"), key="2", width=2*self.dynamic_cons)
-        self.table.add_column("Status", key="3", width=3*self.dynamic_cons)
-        self.table.add_column("User Name", key="4", width=4*self.dynamic_cons)
-        self.table.add_column("CPU", key="5", width=1*self.dynamic_cons)
-        self.table.add_column("RAM", key="6", width=1*self.dynamic_cons)
+        self.table.cursor_type = "row"
+        self.table.add_column("Name", key="0", width=6 * self.dynamic_cons)
+        self.table.add_column(
+            Text("PID", justify="right"), key="1", width=2 * self.dynamic_cons
+        )
+        self.table.add_column(
+            Text("PPID", justify="left"), key="2", width=2 * self.dynamic_cons
+        )
+        self.table.add_column("Status", key="3", width=3 * self.dynamic_cons)
+        self.table.add_column("User Name", key="4", width=4 * self.dynamic_cons)
+        self.table.add_column("CPU", key="5", width=1 * self.dynamic_cons)
+        self.table.add_column("RAM", key="6", width=1 * self.dynamic_cons)
 
     def on_key(self, event):
         if event.character == "l":
             self.process_limit_active = not self.process_limit_active
-            self.notify(f"Process Limit (50): {'ON' if self.process_limit_active else 'OFF'}")
+            self.notify(
+                f"Process Limit (50): {'ON' if self.process_limit_active else 'OFF'}"
+            )
             self.fetch_process_table_data()
         elif event.character == "k":
             self.kill_selected_process()
-        elif event.character == "c" :
+        elif event.character == "c":
             self.locked_row_key = None
             self.table.cursor_type = "none"
-            self.notify("Selection clearedand free scroll enabled", severity="information")
+            self.notify(
+                "Selection clearedand free scroll enabled", severity="information"
+            )
         elif event.key in ("up", "down") and self.table.cursor_type == "none":
             self.table.cursor_type = "row"
 
@@ -124,7 +130,6 @@ class ProcessScreen(Screen):
             self.locked_row_key = None
             self.table.cursor_type = "row"
 
-    
     def kill_selected_process(self):
         if self.table.cursor_type == "none":
             self.notify("No process selected.", severity="warning")
@@ -143,11 +148,11 @@ class ProcessScreen(Screen):
             # 3. Send the terminate signal
             proc = psutil.Process(pid)
             try:
-                proc.terminate()      # Ask to close
+                proc.terminate()  # Ask to close
                 proc.wait(timeout=3)  # Give it 3 seconds to save data
             except psutil.TimeoutExpired:
                 proc.kill()
-            
+
             self.notify(f"Terminated {name} (PID: {pid})", severity="information")
 
             # 4. Instantly remove it from the UI so it feels snappy
@@ -160,7 +165,10 @@ class ProcessScreen(Screen):
         except psutil.NoSuchProcess:
             self.notify("Process no longer exists.", severity="warning")
         except psutil.AccessDenied:
-            self.notify("Access Denied! You must run this script as Admin/Root to kill this process.", severity="error")
+            self.notify(
+                "Access Denied! You must run this script as Admin/Root to kill this process.",
+                severity="error",
+            )
         except Exception as e:
             self.notify(f"Error: {e}", severity="error")
 
@@ -191,11 +199,10 @@ class ProcessScreen(Screen):
             if remainder > 0:
                 col_width += 1
                 remainder -= 1
-            
+
             # Ensure columns don't shrink to 0 width on very tiny screens
             column.width = max(1, col_width)
         self.table.refresh(layout=True)
-
 
     def row_updator(self, processes):
         old_pids = self.old_processes_pid
@@ -208,14 +215,16 @@ class ProcessScreen(Screen):
         self.locked_row_key = None
         if self.table.row_count > 0 and self.table.cursor_type != "none":
             try:
-                self.locked_row_key = self.table.coordinate_to_cell_key(self.table.cursor_coordinate)[0]
+                self.locked_row_key = self.table.coordinate_to_cell_key(
+                    self.table.cursor_coordinate
+                )[0]
             except Exception:
                 pass
 
-        # --- 2. UPDATE THE TABLE ---        
+        # --- 2. UPDATE THE TABLE ---
         with self.app.batch_update():
             for data in processes:
-                pid = data[1] # PID
+                pid = data[1]  # PID
                 new_pids.add(pid)
 
                 if pid in old_pids:
@@ -223,7 +232,13 @@ class ProcessScreen(Screen):
                     update_cell(pid, "5", data[5])
                     update_cell(pid, "6", data[6])
                 else:
-                    add_row(data[0],Text(data[1],justify="right"),Text(data[2],justify="left"),*data[3:], key=pid)
+                    add_row(
+                        data[0],
+                        Text(data[1], justify="right"),
+                        Text(data[2], justify="left"),
+                        *data[3:],
+                        key=pid,
+                    )
 
             # Cleanup dead processes
             for pid in old_pids - new_pids:
@@ -249,7 +264,6 @@ class ProcessScreen(Screen):
             except Exception:
                 pass
 
-
     def on_screen_resume(self):
         self.is_active_screen = True
         self.fetch_process_table_data()
@@ -269,8 +283,13 @@ class ProcessScreen(Screen):
                 self.set_timer(1.2, self.fetch_process_table_data)
 
             elif event.state == WorkerState.ERROR:
-                self.notify(f"Process fetch failed: {event.worker.error}", severity="error", timeout=5)
+                self.notify(
+                    f"Process fetch failed: {event.worker.error}",
+                    severity="error",
+                    timeout=5,
+                )
                 self.set_timer(2.0, self.fetch_process_table_data)
+
 
 class SysCore(App):
     CSS_PATH = "main.tcss"
@@ -302,23 +321,27 @@ class SysCore(App):
         with shelve.open("theme.db") as db:
             self.theme = db.get("theme", "textual-dark")
         self.push_screen("main")
-        
+
         # Default hover tracking to False to save CPU
-        self.mouse_tracking_active = False 
+        self.mouse_tracking_active = False
 
     def on_key(self, event):
         # Press 'm' to toggle hover tracking on and off
         if event.character == "m":
             self.mouse_tracking_active = not self.mouse_tracking_active
-            self.notify(f"Mouse Hover Tracking: {'ON' if self.mouse_tracking_active else 'OFF'}")
+            self.notify(
+                f"Mouse Hover Tracking: {'ON' if self.mouse_tracking_active else 'OFF'}"
+            )
 
     def post_message(self, message) -> bool:
         # Intercept messages before they enter Textual's event loop
         if isinstance(message, MouseMove):
             # If no button is clicked (hovering) AND tracking is off, destroy the event
-            if message.button == 0 and not getattr(self, "mouse_tracking_active", False):
-                return False # 0 CPU overhead!
-        
+            if message.button == 0 and not getattr(
+                self, "mouse_tracking_active", False
+            ):
+                return False  # 0 CPU overhead!
+
         # Allow all other events (clicks, scroll wheel, key presses) to pass normally
         return super().post_message(message)
 
@@ -331,143 +354,144 @@ class SysCore(App):
 
 dusk_light = Theme(
     name="dusklight",
-    primary="#99dfff",       # Fluorescent Azure / Aqua
-    secondary="#3c96fc",     # Deep Vibrant Blue
-    warning="#fff86b",       # Bright Fluorescent Yellow
-    error="#ff5252",         # Vibrant Red
-    success="#6bffa3",       # Fluorescent Green
-    accent="#fff86b",        # Yellow Accent
-    background="#0d131f",    # Deep Midnight Blue Base
-    surface="#151e2e",       # Elevated Midnight Blue (for cards/containers)
-    panel="#1c283d",         # Lighter Panel Blue (for modals/popups)
+    primary="#99dfff",  # Fluorescent Azure / Aqua
+    secondary="#3c96fc",  # Deep Vibrant Blue
+    warning="#fff86b",  # Bright Fluorescent Yellow
+    error="#ff5252",  # Vibrant Red
+    success="#6bffa3",  # Fluorescent Green
+    accent="#fff86b",  # Yellow Accent
+    background="#0d131f",  # Deep Midnight Blue Base
+    surface="#151e2e",  # Elevated Midnight Blue (for cards/containers)
+    panel="#1c283d",  # Lighter Panel Blue (for modals/popups)
     dark=True,
 )
 
 dusk_dark = Theme(
     name="duskdark",
-    primary="#00d7ff",      # Cyan borders, graphs, and default text
-    secondary="#2a7bde",    # Deep blue (seen in 'Avail' memory bar)
-    warning="#dce775",      # Yellow-green (seen in 'Cache' and 'Page+Virt' bars)
-    error="#ff3333",        # Red for critical alerts (inferred from btop standards)
-    success="#00d7ff",      # Cyan for stable states
-    accent="#ff8c00",       # Bright orange (seen in highlighted letters like 'menu' or 'mem')
-    background="#000000",   # Pure black terminal background from the screenshot
-    surface="#0f1419",      # Slight elevation for Textual containers
-    panel="#171d24",        # Lighter elevation for popups/modals
+    primary="#00d7ff",  # Cyan borders, graphs, and default text
+    secondary="#2a7bde",  # Deep blue (seen in 'Avail' memory bar)
+    warning="#dce775",  # Yellow-green (seen in 'Cache' and 'Page+Virt' bars)
+    error="#ff3333",  # Red for critical alerts (inferred from btop standards)
+    success="#00d7ff",  # Cyan for stable states
+    accent="#ff8c00",  # Bright orange (seen in highlighted letters like 'menu' or 'mem')
+    background="#000000",  # Pure black terminal background from the screenshot
+    surface="#0f1419",  # Slight elevation for Textual containers
+    panel="#171d24",  # Lighter elevation for popups/modals
     dark=True,
 )
 
 cyber_neon = Theme(
     name="cyber_neon",
-    primary="#ff007f",      # Neon Pink
-    secondary="#7100b8",    # Deep Purple
-    warning="#fcee0a",      # Cyber Yellow
-    error="#ff003c",        # Crimson Red
-    success="#00ff9f",      # Mint Green
-    accent="#00f0ff",       # Neon Cyan
-    background="#050514",   # Almost black, slight blue-purple tint
-    surface="#10102b",      
-    panel="#1a1a40",        
+    primary="#ff007f",  # Neon Pink
+    secondary="#7100b8",  # Deep Purple
+    warning="#fcee0a",  # Cyber Yellow
+    error="#ff003c",  # Crimson Red
+    success="#00ff9f",  # Mint Green
+    accent="#00f0ff",  # Neon Cyan
+    background="#050514",  # Almost black, slight blue-purple tint
+    surface="#10102b",
+    panel="#1a1a40",
     dark=True,
 )
 
 forest_moss = Theme(
     name="forest_moss",
-    primary="#8ebd6b",      # Moss Green
-    secondary="#5c7551",    # Dark Leaf
-    warning="#d6a848",      # Golden Earth
-    error="#c46c49",        # Clay Red
-    success="#a2b374",      # Pale Grass
-    accent="#e3c28a",       # Sandstone
-    background="#191f1b",   # Very dark forest green/grey
-    surface="#252d27",      
-    panel="#313b33",        
+    primary="#8ebd6b",  # Moss Green
+    secondary="#5c7551",  # Dark Leaf
+    warning="#d6a848",  # Golden Earth
+    error="#c46c49",  # Clay Red
+    success="#a2b374",  # Pale Grass
+    accent="#e3c28a",  # Sandstone
+    background="#191f1b",  # Very dark forest green/grey
+    surface="#252d27",
+    panel="#313b33",
     dark=True,
 )
 
 magma = Theme(
     name="magma",
-    primary="#ff5a00",      # Bright Magma Orange
-    secondary="#9e2a2b",    # Cooled Lava Red
-    warning="#ff9f1c",      # Glowing Yellow
-    error="#540b0e",        # Deep Burn Red
-    success="#e09f3e",      # Amber
-    accent="#fff3b0",       # White-hot center
-    background="#0d0d0d",   # Charred Black
-    surface="#1a1515",      
-    panel="#261b1b",        
+    primary="#ff5a00",  # Bright Magma Orange
+    secondary="#9e2a2b",  # Cooled Lava Red
+    warning="#ff9f1c",  # Glowing Yellow
+    error="#540b0e",  # Deep Burn Red
+    success="#e09f3e",  # Amber
+    accent="#fff3b0",  # White-hot center
+    background="#0d0d0d",  # Charred Black
+    surface="#1a1515",
+    panel="#261b1b",
     dark=True,
 )
 
 bioluminescence = Theme(
     name="bioluminescence",
-    primary="#00f5d4",      # Glowing Neon Teal
-    secondary="#00bbf9",    # Deep Sea Bright Blue
-    warning="#fee440",      # Yellow Tang
-    error="#f15bb5",        # Hot Magenta
-    success="#38b000",      # Algae Green
-    accent="#9b5de5",       # Ultraviolet Coral
-    background="#040d14",   # Deep Abyss Blue-Black
-    surface="#0a1c29",      # Elevated Oceanic Blue
-    panel="#102b40",        # Lighter Water Column
+    primary="#00f5d4",  # Glowing Neon Teal
+    secondary="#00bbf9",  # Deep Sea Bright Blue
+    warning="#fee440",  # Yellow Tang
+    error="#f15bb5",  # Hot Magenta
+    success="#38b000",  # Algae Green
+    accent="#9b5de5",  # Ultraviolet Coral
+    background="#040d14",  # Deep Abyss Blue-Black
+    surface="#0a1c29",  # Elevated Oceanic Blue
+    panel="#102b40",  # Lighter Water Column
     dark=True,
 )
 
 copper_patina = Theme(
     name="copper_patina",
-    primary="#c27a5d",      # Raw Copper / Rust
-    secondary="#7a9c96",    # Oxidized Teal Patina
-    warning="#d4a373",      # Polished Brass
-    error="#9c4a3a",        # Iron Red
-    success="#6b8e23",      # Olive Drab
-    accent="#e0c097",       # Bleached Bone / Ash
-    background="#1a1817",   # Soot Black
-    surface="#2b2624",      # Dark Industrial Brown
-    panel="#3d3532",        # Weathered Steel
+    primary="#c27a5d",  # Raw Copper / Rust
+    secondary="#7a9c96",  # Oxidized Teal Patina
+    warning="#d4a373",  # Polished Brass
+    error="#9c4a3a",  # Iron Red
+    success="#6b8e23",  # Olive Drab
+    accent="#e0c097",  # Bleached Bone / Ash
+    background="#1a1817",  # Soot Black
+    surface="#2b2624",  # Dark Industrial Brown
+    panel="#3d3532",  # Weathered Steel
     dark=True,
 )
 
 arcade_carpet = Theme(
     name="arcade_carpet",
-    primary="#39ff14",      # CRT Phosphor Green
-    secondary="#ff00ff",    # Laser Magenta
-    warning="#ffea00",      # Pac-Man Yellow
-    error="#ff073a",        # Arcade Cabinet Red
-    success="#00ffff",      # Electric Cyan
-    accent="#b026ff",       # Blacklight Purple
-    background="#0d0514",   # Pitch Purple-Black
-    surface="#180a2b",      # Shadow Purple
-    panel="#250f45",        # Arcade Dim Lighting
+    primary="#39ff14",  # CRT Phosphor Green
+    secondary="#ff00ff",  # Laser Magenta
+    warning="#ffea00",  # Pac-Man Yellow
+    error="#ff073a",  # Arcade Cabinet Red
+    success="#00ffff",  # Electric Cyan
+    accent="#b026ff",  # Blacklight Purple
+    background="#0d0514",  # Pitch Purple-Black
+    surface="#180a2b",  # Shadow Purple
+    panel="#250f45",  # Arcade Dim Lighting
     dark=True,
 )
 
 midnight_desert = Theme(
     name="midnight_desert",
-    primary="#ff9e00",      # Horizon Orange
-    secondary="#c77dff",    # Night Sky Violet
-    warning="#ffc300",      # Starlight Yellow
-    error="#d00000",        # Canyon Red
-    success="#74c69d",      # Saguaro Green
-    accent="#ffdb3a",       # Brilliant Flare
-    background="#120e1f",   # Midnight Blue-Purple
-    surface="#1e172e",      # Distant Mountains
-    panel="#2a1f3d",        # Elevated Mesa
+    primary="#ff9e00",  # Horizon Orange
+    secondary="#c77dff",  # Night Sky Violet
+    warning="#ffc300",  # Starlight Yellow
+    error="#d00000",  # Canyon Red
+    success="#74c69d",  # Saguaro Green
+    accent="#ffdb3a",  # Brilliant Flare
+    background="#120e1f",  # Midnight Blue-Purple
+    surface="#1e172e",  # Distant Mountains
+    panel="#2a1f3d",  # Elevated Mesa
     dark=True,
 )
 
 paper_ink = Theme(
     name="paper_ink",
-    primary="#2c363f",      # Graphite / Pen Ink
-    secondary="#596c68",    # Faded Teal Ink
-    warning="#d08c60",      # Sepia Wash
-    error="#9e2a2b",        # Red Proofing Ink
-    success="#52796f",      # Muted Forest Green
-    accent="#8f3d4c",       # Burgundy Wax Seal
-    background="#f4f1ea",   # Warm Vellum Paper
-    surface="#e6e1d6",      # Pressed Cardboard
-    panel="#d9d3c5",        # Darker Paper Grain
-    dark=False,             # Note: Light theme for a completely different TUI feel
+    primary="#2c363f",  # Graphite / Pen Ink
+    secondary="#596c68",  # Faded Teal Ink
+    warning="#d08c60",  # Sepia Wash
+    error="#9e2a2b",  # Red Proofing Ink
+    success="#52796f",  # Muted Forest Green
+    accent="#8f3d4c",  # Burgundy Wax Seal
+    background="#f4f1ea",  # Warm Vellum Paper
+    surface="#e6e1d6",  # Pressed Cardboard
+    panel="#d9d3c5",  # Darker Paper Grain
+    dark=False,  # Note: Light theme for a completely different TUI feel
 )
+
 
 def main():
     arg = sys.argv[1:]

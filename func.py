@@ -7,14 +7,15 @@ from collections import namedtuple
 from usage_bar import usage_details
 import functools
 
-mb=1024 ** 2
-gb=1024 ** 3
+mb = 1024**2
+gb = 1024**3
 
 _disk_cache = {}
 _net_cache = {}
 _hardware_cache = {}
 Disk_Info = namedtuple("Info", ["drive", "read", "write", "count_r", "count_w"])
 Net_Info = namedtuple("NetInfo", ["device", "upload", "download", "sent", "recv"])
+
 
 def cpu_table_1():
     table = Table(show_header=True, box=None, padding=(0, 1), expand=True)
@@ -33,7 +34,7 @@ def cpu_table_1():
             temps = psutil.sensors_temperatures(fahrenheit=False)
 
             found_key = _hardware_cache.get("cpu_temp_key")
-            
+
             if not found_key:
                 sensor_keys = ["coretemp", "k10temp", "cpu_thermal"]
                 found_key = next((k for k in sensor_keys if k in temps), None)
@@ -229,9 +230,20 @@ def network_table():
     d_details = net_info_cal()
     for d_detail in d_details:
         dev_name = d_detail.device.lower()
-        if "wi-fi" in dev_name or "wlp" in dev_name or "wlan" in dev_name or "wireless" in dev_name:
+        if (
+            "wi-fi" in dev_name
+            or "wlp" in dev_name
+            or "wlan" in dev_name
+            or "wireless" in dev_name
+        ):
             emoji = "🛜"
-        elif "ethernet" in dev_name or "eth" in dev_name or "enp" in dev_name or "en1" in dev_name or "lan" in dev_name:
+        elif (
+            "ethernet" in dev_name
+            or "eth" in dev_name
+            or "enp" in dev_name
+            or "en1" in dev_name
+            or "lan" in dev_name
+        ):
             emoji = "🔌"
         else:
             emoji = "🌐"
@@ -387,8 +399,10 @@ def process_table_1():
 
     return table
 
-core_no=None
+
+core_no = None
 USER_CACHE = {}
+
 
 @functools.lru_cache(maxsize=2048)
 def get_username(pid):
@@ -398,6 +412,7 @@ def get_username(pid):
     except (psutil.NoSuchProcess, psutil.AccessDenied):
         return "-"
 
+
 def get_process_data(limit=None):
     global core_no
     core_no = core_no or (psutil.cpu_count(logical=True) or 1)
@@ -406,11 +421,17 @@ def get_process_data(limit=None):
     processes = sorted(
         (
             # Tuple index 0: The mathematical score
-            (((p.info["cpu_percent"] or 0.0) / core_no * 0.6) + ((p.info["memory_percent"] or 0.0) * 0.4), p.info)
-            for p in psutil.process_iter(["name", "pid", "ppid", "status", "cpu_percent", "memory_percent"])
+            (
+                ((p.info["cpu_percent"] or 0.0) / core_no * 0.6)
+                + ((p.info["memory_percent"] or 0.0) * 0.4),
+                p.info,
+            )
+            for p in psutil.process_iter(
+                ["name", "pid", "ppid", "status", "cpu_percent", "memory_percent"]
+            )
         ),
-        key=lambda x: x[0], 
-        reverse=True
+        key=lambda x: x[0],
+        reverse=True,
     )
 
     if limit:
@@ -425,10 +446,11 @@ def get_process_data(limit=None):
             info["status"] or "-",
             get_username(info["pid"]),
             f"{(info['cpu_percent'] or 0.0) / core_no:.2f}",
-            f"{info['memory_percent'] or 0.0:.2f}"
+            f"{info['memory_percent'] or 0.0:.2f}",
         )
         for _, info in processes
     ]
+
 
 def program_name():
     ascii_art = r"""
