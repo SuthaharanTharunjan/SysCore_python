@@ -3,7 +3,7 @@
 ![Main Screen img](images/main_screen.png)
 ![Process Screen img](images/process_screen.png)
 ![Palette](images/palette.png)
-![themes selection](images/themes.png)
+![Themes selection](images/themes.png)
 
 #### 🎥 Video Demo: https://youtu.be/l3YHsJunmEA
 
